@@ -1,0 +1,53 @@
+{
+  "name": "janode",
+  "description": "Meetecho adapter for the Janus WebRTC Server",
+  "version": "1.6.11",
+  "type": "module",
+  "keywords": [
+    "janus",
+    "webrtc",
+    "sfu",
+    "meetecho",
+    "nodejs"
+  ],
+  "author": {
+    "name": "Alessandro Toppi",
+    "email": "atoppi@meetecho.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/meetecho/janode.git"
+  },
+  "bugs": {
+    "url": "https://github.com/meetecho/janode/issues"
+  },
+  "license": "ISC",
+  "main": "./src/janode.js",
+  "exports": {
+    ".": "./src/janode.js",
+    "./plugins/audiobridge": "./src/plugins/audiobridge-plugin.js",
+    "./plugins/echotest": "./src/plugins/echotest-plugin.js",
+    "./plugins/streaming": "./src/plugins/streaming-plugin.js",
+    "./plugins/videoroom": "./src/plugins/videoroom-plugin.js"
+  },
+  "files": [
+    "src/*.js",
+    "src/utils/*.js",
+    "src/plugins/*.js"
+  ],
+  "dependencies": {
+    "isomorphic-ws": "^4.0.1",
+    "ws": "^8.0.0",
+    "unix-dgram": "^2.0.4"
+  },
+  "devDependencies": {
+    "eslint": "^8.25.0"
+  },
+  "engines": {
+    "node": " >=14.13.1 || >=16.0.0"
+  },
+  "scripts": {
+    "build": "npm install --omit=dev",
+    "lint": "eslint --ext .js --config .eslintrc.json src"
+  }
+}
