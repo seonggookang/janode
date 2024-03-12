@@ -1,5 +1,6 @@
+/* eslint-disable multiline-comment-style */
 /* eslint-disable no-sparse-arrays */
-/* global io connect disconnect leave */
+/* global io $ connect disconnect create_room list_rooms*/
 
 'use strict';
 
@@ -159,9 +160,9 @@ const socket = io({
 // Functions for room actions
 // completely destroy target room
 function destroy_room(room, desc) {
-    if (confirm(desc + ' room을 삭제하겠습니까?')) {
-      _destroy({ room : room, permanent : false, secret : 'adminpwd' });
-    }
+  if (confirm(desc + ' room을 삭제하겠습니까?')) {
+    _destroy({ room : room, permanent : false, secret : 'adminpwd' });
+  }
 };
   
 // Join an hypothetical room: soon to be deleted
@@ -224,14 +225,14 @@ function trickle({ feed, candidate }) {
 }
 
 function update(subscribe, unsubscribe) {
-  let configureData = {}
+  let configureData = {};
   
   if (subscribe){
-    configureData.subscribe = subscribe
+    configureData.subscribe = subscribe;
   } 
 
   if (unsubscribe){
-    configureData.unsubscribe = unsubscribe
+    configureData.unsubscribe = unsubscribe;
   }
 
   const configId = getId();
@@ -874,7 +875,10 @@ socket.on('configured', async ({ data, _id }) => {
 
 socket.on('updated', async ({ data, _id }) => {
   console.log('updated to feed as below', getDateTime());
-  console.log(data);
+  console.log('data in updated >>>>> ', data);
+
+  // 실험중일 때 나오는 값 ----->  { room : 1234 }
+  // 버튼을 클릭하면 나오는 값 ----> {jsep: {…}, room: 1234, streams: Array(2)}
 
   try {
     const answer = await doAnswer(data.streams[0].feed_id, data.streams[0].feed_display, data.jsep);
@@ -943,6 +947,7 @@ socket.on('leaving', ({ data }) => {
   if (data.feed) {
     removeVideoElementByFeed(data.feed);
     closePC(data.feed);
+    renderPage(currentPage);
   }
   _listRooms();
 });
@@ -1025,11 +1030,11 @@ async function _restartPublisher(feed) {
 }
 
 async function _subscribeUpdate(feed) {
-  update([{ "type": "video", "mid" : "1", "feed": feed }], null);
+  update([{ 'type': 'video', 'mid' : '1', 'feed': feed }], null);
 }
 
 async function _unsubscribeUpdate(feed) {
-  update(null, [{ "type": "video", "mid" : "1", "feed": feed, "send": false }]);
+  update(null, [{ 'type': 'video', 'mid' : '1', 'feed': feed, 'send': false }]);
 }
 
 
@@ -1187,20 +1192,20 @@ function setLocalVideoElement(localStream, feed, display, room) {
     nameElem.innerHTML = display + ' (' + feed + ')';
     nameElem.style.display = 'table';
 
-     // Create a video element for the local stream
-     const localVideoStreamElem = document.createElement('video');
-     localVideoStreamElem.width = 320;
-     localVideoStreamElem.height = 240;
-     localVideoStreamElem.autoplay = true;
-     localVideoStreamElem.muted = 'muted'; // Mute the local video
-     localVideoStreamElem.style.cssText = '-moz-transform: scale(-1, 1); -webkit-transform: scale(-1, 1); -o-transform: scale(-1, 1); transform: scale(-1, 1); filter: FlipH;';
-     localVideoStreamElem.id = feed;
+    // Create a video element for the local stream
+    const localVideoStreamElem = document.createElement('video');
+    localVideoStreamElem.width = 320;
+    localVideoStreamElem.height = 240;
+    localVideoStreamElem.autoplay = true;
+    localVideoStreamElem.muted = 'muted'; // Mute the local video
+    localVideoStreamElem.style.cssText = '-moz-transform: scale(-1, 1); -webkit-transform: scale(-1, 1); -o-transform: scale(-1, 1); transform: scale(-1, 1); filter: FlipH;';
+    localVideoStreamElem.id = feed;
 
-     // Create an image for no video
-     const noImageElem = document.createElement('img')
-     noImageElem.src = '/images/blank_person.png'
-     noImageElem.width = 320;
-     noImageElem.height = 240;
+    // Create an image for no video
+    const noImageElem = document.createElement('img')
+    noImageElem.src = '/images/sydney.png'
+    noImageElem.width = 320;
+    noImageElem.height = 240;
 
     // If the localStream is provided, create a the video element and set the localstream as the source for the video element 
     if (localStream) {
@@ -1220,16 +1225,16 @@ function setLocalVideoElement(localStream, feed, display, room) {
       noImageElem.style.display = 'none'; 
     }    
 
-      // Create a container div for the local video (without video element)
-      // **** the create container div could have been moved out of the if statement
-      const localVideoContainer = document.createElement('div')
-      localVideoContainer.id = 'video_' + feed
-      localVideoContainer.appendChild(nameElem)
-      localVideoContainer.appendChild(localVideoStreamElem);
-      localVideoContainer.appendChild(noImageElem)
+    // Create a container div for the local video (without video element)
+    // **** the create container div could have been moved out of the if statement
+    const localVideoContainer = document.createElement('div')
+    localVideoContainer.id = 'video_' + feed
+    localVideoContainer.appendChild(nameElem)
+    localVideoContainer.appendChild(localVideoStreamElem);
+    localVideoContainer.appendChild(noImageElem)
 
-      // Append the container to the 'locals' element in the HTML
-      document.getElementById('locals').appendChild(localVideoContainer)
+    // Append the container to the 'locals' element in the HTML
+    document.getElementById('locals').appendChild(localVideoContainer)
     
   }
   else {
@@ -1238,8 +1243,8 @@ function setLocalVideoElement(localStream, feed, display, room) {
     const localVideoStreamElem = document.getElementById(feed);
 
     // Create an image for no video
-    const noImageElem = document.createElement('img')
-    noImageElem.src = '/images/blank_person.png'
+    const noImageElem = document.createElement('img');
+    noImageElem.src = '/images/sydney.png';
     noImageElem.width = 320;
     noImageElem.height = 240;
 
@@ -1273,21 +1278,110 @@ function setLocalVideoElement(localStream, feed, display, room) {
   }
 }
 
+const itemsPerPage = 1;
+let currentPage = 1;
+
+// 페이지 네이션 버튼 클릭
+document.getElementById('js-pagination').addEventListener('click', (event) => {
+  if (event.target.tagName === 'BUTTON') {
+    currentPage = parseInt(event.target.textContent);
+    renderPage(currentPage);
+  }
+});
+
+function renderPage(pageNumber) {
+
+  console.log('currentPage >>> ', currentPage);
+  console.log('remote peer가 들어오면 시작');
+  const startIndex = (pageNumber - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const remoteContainers = document.querySelectorAll('#remotes > div');
+  const paginationContainer = document.getElementById('js-pagination');
+  paginationContainer.innerHTML = '';
+
+  // remoteContainers가 비어 있는 경우 함수 종료
+  if (remoteContainers.length === 0) {
+    return;
+  }
+
+  console.log('remoteContainers >>> ', remoteContainers);
+
+  // _subscribeUpdate(Number(container.id.split('_')[1]));
+  remoteContainers.forEach((container, index) => { // 여기에다가
+    console.log('container in renderpage>>> ', container);
+    console.log('index in renderpage >>> ', index);
+    
+
+    // _subscribeUpdate(Number(container.id.split('_')[1]));
+    if (index >= startIndex && index < endIndex) { // current page가 1이면 start는 0, endindex는 1. 맨 앞에 나온거에 대해 보여주며 subscribe해야됨
+      container.style.display = 'block';
+      _subscribeUpdate(Number(container.id.split('_')[1]));
+      
+    } else {
+      container.style.display = 'block';
+      _unsubscribeUpdate(Number(container.id.split('_')[1]));
+    }
+  });
+
+  // 따로 만들어줘야할 듯
+  // 위 remoteContainers는 remote 전체 배열을
+  
+  const totalItems = remoteContainers.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  
+  if (pageNumber > totalPages) {
+    currentPage = totalPages > 0 ? totalPages : 1;
+    return renderPage(currentPage);
+  }
+  
+  for (let i = 1; i <= totalPages; i++) {
+    const pageButton = document.createElement('button');
+    pageButton.textContent = i;
+    pageButton.className = 'pagination-button';
+
+    if (i === pageNumber) {
+      pageButton.classList.add('clicked');
+    }
+    paginationContainer.appendChild(pageButton);
+  } 
+}
+
 // Function to set the remote video element
 function setRemoteVideoElement(remoteStream, feed, display, talking=null) {
-
+  console.log('js-pagination button >>>> ', document.querySelector('#js-pagination button'));
+  console.log('1번 버튼이 있나? >>> ', document.querySelector('.pagination-button'));
+  console.log(document.querySelector('#js-pagination button')=== document.querySelector('.pagination-button'));
+  
   // If no feed exists just exit
   if (!feed) return;
+  const divCount = document.querySelectorAll('#remotes > div').length;
+  console.log('div 태그 갯수 >>>  ', divCount);
 
+  
   // Check if the remote video element with the given feed ID already exists
   if (!document.getElementById('video_' + feed)) {
+
+    // 페이지를 렌더링하는 로직
+    // 예를 들어, 첫 번째 페이지로 강제 이동
+    
+    // if(divCount === 0){
+      
+    // }
+    // if( currentPage === 1 ) {
+      
+    const firstPageButton = document.querySelector('#js-pagination button:first-child');
+    
+    if (firstPageButton) {
+      firstPageButton.click();
+    }  
+    // }
+    
+    
 
     console.log('===========inside remoteElement, feed element doesnt exist========')
     // Create a new span element to display the user's name and feed ID
     const nameElem = document.createElement('span');
-    // const onlyAudio_btn = "<button onclick='_restartSubscriberAudio("+feed+");' class='btn btn-primary btn-xs' style='margin-left:2px;'>Audio Only</button>";
     const onlyAudio_btn = "<button onclick='_unsubscribeUpdate("+feed+");' class='btn btn-primary btn-xs' style='margin-left:2px;'>Audio Only</button>";
-    // const audioVideo_btn = "<button onclick='_restartSubscriberAudioVideo("+feed+");' class='btn btn-primary btn-xs' style='margin-left:2px;'>Audio Video</button>";
     const audioVideo_btn = "<button onclick='_subscribeUpdate("+feed+");' class='btn btn-primary btn-xs' style='margin-left:2px;'>Audio Video</button>";
     nameElem.innerHTML = display + ' (' + feed + ')' + onlyAudio_btn + audioVideo_btn;
     nameElem.style.display = 'table';
@@ -1298,6 +1392,7 @@ function setRemoteVideoElement(remoteStream, feed, display, talking=null) {
     remoteVideoStreamElem.width = 320;
     remoteVideoStreamElem.height = 240;
     remoteVideoStreamElem.autoplay = true;
+    remoteVideoStreamElem.style.cssText = '-moz-transform: scale(-1, 1); -webkit-transform: scale(-1, 1); -o-transform: scale(-1, 1); transform: scale(-1, 1); filter: FlipH;';
     remoteVideoStreamElem.setAttribute('feed', feed);
     remoteVideoStreamElem.id = feed;
 
@@ -1307,43 +1402,78 @@ function setRemoteVideoElement(remoteStream, feed, display, talking=null) {
     noImageElem.src = '/images/sydney.png';
     noImageElem.width = 320;
     noImageElem.height = 240;
-    noImageElem.id = `photo_${feed}`;
-
-    // Aply CSS transformations for mirroring the video horizontally
-    remoteVideoStreamElem.style.cssText = '-moz-transform: scale(-1, 1); -webkit-transform: scale(-1, 1); -o-transform: scale(-1, 1); transform: scale(-1, 1); filter: FlipH;';
+    noImageElem.id = `photo_${feed}`;    
     
+    
+
     // If the remoteStream is provided, set it as the source for the video element
     if (remoteStream) {
+      console.log('remoteStream >>> ', remoteStream);
       remoteVideoStreamElem.srcObject = remoteStream;
-
+      console.log('remoteStream.getTracks() >>>>> ', remoteStream.getTracks()); // audio만 나오고 있음
       // const audioTracks = remoteStream.getAudioTracks()
-      const videoTracks = remoteStream.getVideoTracks()
-
-      if (videoTracks.length === 0){
+      const videoTracks = remoteStream.getVideoTracks();
+      console.log('videoTracks.length 111 >>>>> ', videoTracks);
+      console.log('currentPage in setRemoteVideoElement >>> ', currentPage);
+      if (videoTracks.length === 0) {
+        console.log('videoTracks.length 222 >>> ', videoTracks.length);
+        
         remoteVideoStreamElem.style.display = 'none';
         noImageElem.style.display = 'block';
-      } else{
+        // _subscribeUpdate(feed);
+      } else {
+        console.log('videoTracks.length 333 >>> ', videoTracks.length);
         remoteVideoStreamElem.style.display = 'block';
         noImageElem.style.display = 'none';
       }
-    } else{
+    } else {
       noImageElem.style.display = 'none';
     }
 
     // Create a container div for the remote video 
     const remoteVideoContainer = document.createElement('div');
     remoteVideoContainer.id = 'video_' + feed;
+    remoteVideoContainer.classList.add('remote-container');
     remoteVideoContainer.appendChild(nameElem);
     remoteVideoContainer.appendChild(remoteVideoStreamElem);
     remoteVideoContainer.appendChild(noImageElem);
 
     // Append the container to the 'remotes' element in the HTML
     document.getElementById('remotes').appendChild(remoteVideoContainer);
+    
+    // renderPage(currentPage);
+    // 최초로 remotepeer가 입장하고 currentPage가 1일 때 _subscribeUpdate(feed) 실행
+    // console.log('feed >>>>>>>>> ', feed);
+    // if (currentPage === 1) {
+    //   _subscribeUpdate(feed);
+    // } else {
+    //   return;
+    // }
+
+    const remoteContainers = document.querySelectorAll('.remote-container');
+    const paginationContainer = document.getElementById('js-pagination');
+    
+    paginationContainer.innerHTML = '';
+    
+    const totalItems = remoteContainers.length;
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    
+    for (let i = 1; i <= totalPages; i++) {
+      const pageButton = document.createElement('button');
+      pageButton.textContent = i;
+      pageButton.className = 'pagination-button';
+      
+      if(i === currentPage) {
+        pageButton.classList.add('clicked');
+      } 
+      
+      paginationContainer.appendChild(pageButton); 
+    }
+
   }
 
   // If the video element already exists, update its properties
   else {
-
     console.log('===========inside remoteElement, feed element exist========')
     // Get the video container by its feed
     const remoteVideoContainer = document.getElementById('video_' + feed);
@@ -1353,9 +1483,7 @@ function setRemoteVideoElement(remoteStream, feed, display, talking=null) {
 
     if (display) {
       const nameElem = remoteVideoContainer.getElementsByTagName('span')[0];
-       // const onlyAudio_btn = "<button onclick='_restartSubscriberAudio("+feed+");' class='btn btn-primary btn-xs' style='margin-left:2px;'>Audio Only</button>";
       const onlyAudio_btn = "<button onclick='_unsubscribeUpdate("+feed+");' class='btn btn-primary btn-xs' style='margin-left:2px;'>Audio Only</button>";
-      // const audioVideo_btn = "<button onclick='_restartSubscriberAudioVideo("+feed+");' class='btn btn-primary btn-xs' style='margin-left:2px;'>Audio Video</button>";
       const audioVideo_btn = "<button onclick='_subscribeUpdate("+feed+");' class='btn btn-primary btn-xs' style='margin-left:2px;'>Audio Video</button>";
       nameElem.innerHTML = display + ' (' + feed + ')' + onlyAudio_btn + audioVideo_btn;
     }
@@ -1366,7 +1494,7 @@ function setRemoteVideoElement(remoteStream, feed, display, talking=null) {
       remoteVideoStreamElem.srcObject = remoteStream;
 
       // const audioTracks = remoteStream.getAudioTracks()
-      const videoTracks = remoteStream.getVideoTracks()
+      const videoTracks = remoteStream.getVideoTracks();
 
       if (videoTracks.length === 0){
         remoteVideoStreamElem.style.display = 'none';
@@ -1380,11 +1508,11 @@ function setRemoteVideoElement(remoteStream, feed, display, talking=null) {
     }
 
     if (talking == true){
-      console.log("=====talking is true=======")
+      console.log('=====talking is true=======');
       remoteVideoContainer.classList.add('border', 'border-danger');
 
     } else if (talking == false){
-      console.log("=====talking is false=======")
+      console.log('=====talking is false=======');
       remoteVideoContainer.classList.remove('border', 'border-danger');
     }
   }

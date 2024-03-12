@@ -361,7 +361,7 @@ function initFrontEnd() {
     socket.on('update', async (evtdata = {}) => {
       Logger.info(`${LOG_NS} ${remote} updated received as below`);
       const { _id, data: confdata = {} } = evtdata;
-
+      console.log('evtdata in update >>> ', evtdata.data);
       try {
 
         let handle;
