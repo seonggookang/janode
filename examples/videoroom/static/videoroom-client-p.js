@@ -1203,7 +1203,7 @@ function setLocalVideoElement(localStream, feed, display, room) {
 
     // Create an image for no video
     const noImageElem = document.createElement('img')
-    noImageElem.src = '/images/sydney.png'
+    noImageElem.src = '/images/blank_person.png'
     noImageElem.width = 320;
     noImageElem.height = 240;
 
@@ -1243,8 +1243,8 @@ function setLocalVideoElement(localStream, feed, display, room) {
     const localVideoStreamElem = document.getElementById(feed);
 
     // Create an image for no video
-    const noImageElem = document.createElement('img');
-    noImageElem.src = '/images/sydney.png';
+    const noImageElem = document.createElement('img')
+    noImageElem.src = '/images/blank_person.png'
     noImageElem.width = 320;
     noImageElem.height = 240;
 
@@ -1281,11 +1281,12 @@ function setLocalVideoElement(localStream, feed, display, room) {
 const itemsPerPage = 1;
 let currentPage = 1;
 
+
 // 페이지 네이션 버튼 클릭
 document.getElementById('js-pagination').addEventListener('click', (event) => {
   if (event.target.tagName === 'BUTTON') {
     currentPage = parseInt(event.target.textContent);
-    renderPage(currentPage);
+    renderPage(currentPage,null,null);
   }
 });
 
@@ -1348,35 +1349,14 @@ function renderPage(pageNumber) {
 
 // Function to set the remote video element
 function setRemoteVideoElement(remoteStream, feed, display, talking=null) {
-  console.log('js-pagination button >>>> ', document.querySelector('#js-pagination button'));
-  console.log('1번 버튼이 있나? >>> ', document.querySelector('.pagination-button'));
-  console.log(document.querySelector('#js-pagination button')=== document.querySelector('.pagination-button'));
+  // 여기서 최초로 remotepeer가 입장했을 때 currentPage가 1인 곳에 들어오게 되면 _subscribeUpdate(feed)가 바로 실행되고싶다.
   
+
   // If no feed exists just exit
   if (!feed) return;
-  const divCount = document.querySelectorAll('#remotes > div').length;
-  console.log('div 태그 갯수 >>>  ', divCount);
 
-  
   // Check if the remote video element with the given feed ID already exists
   if (!document.getElementById('video_' + feed)) {
-
-    // 페이지를 렌더링하는 로직
-    // 예를 들어, 첫 번째 페이지로 강제 이동
-    
-    // if(divCount === 0){
-      
-    // }
-    // if( currentPage === 1 ) {
-      
-    const firstPageButton = document.querySelector('#js-pagination button:first-child');
-    
-    if (firstPageButton) {
-      firstPageButton.click();
-    }  
-    // }
-    
-    
 
     console.log('===========inside remoteElement, feed element doesnt exist========')
     // Create a new span element to display the user's name and feed ID
@@ -1408,21 +1388,24 @@ function setRemoteVideoElement(remoteStream, feed, display, talking=null) {
 
     // If the remoteStream is provided, set it as the source for the video element
     if (remoteStream) {
-      console.log('remoteStream >>> ', remoteStream);
       remoteVideoStreamElem.srcObject = remoteStream;
-      console.log('remoteStream.getTracks() >>>>> ', remoteStream.getTracks()); // audio만 나오고 있음
+      console.log('remoteStream >>>>> ', remoteStream.getTracks()); // audio만 나오고 있음
       // const audioTracks = remoteStream.getAudioTracks()
       const videoTracks = remoteStream.getVideoTracks();
-      console.log('videoTracks.length 111 >>>>> ', videoTracks);
+      console.log('videoTracks.length >>>>> ', videoTracks);
       console.log('currentPage in setRemoteVideoElement >>> ', currentPage);
       if (videoTracks.length === 0) {
-        console.log('videoTracks.length 222 >>> ', videoTracks.length);
-        
+        // if(currentPage === 1){
+        //   remoteVideoStreamElem.style.display = 'block';
+        //   noImageElem.style.display = 'none';  
+        // } else {
+        //   remoteVideoStreamElem.style.display = 'none';
+        //   noImageElem.style.display = 'block'; 
+        // }
         remoteVideoStreamElem.style.display = 'none';
         noImageElem.style.display = 'block';
         // _subscribeUpdate(feed);
       } else {
-        console.log('videoTracks.length 333 >>> ', videoTracks.length);
         remoteVideoStreamElem.style.display = 'block';
         noImageElem.style.display = 'none';
       }
@@ -1469,7 +1452,6 @@ function setRemoteVideoElement(remoteStream, feed, display, talking=null) {
       
       paginationContainer.appendChild(pageButton); 
     }
-
   }
 
   // If the video element already exists, update its properties
