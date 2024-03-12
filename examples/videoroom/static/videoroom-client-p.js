@@ -726,7 +726,7 @@ socket.on('connect', () => {
   $('#disconnect, #create_room, #list_rooms' ).prop('disabled', false);
 
   //url 에 room_id 가 있으면 바로 
-  const room_id = $('#curr_room_name').attr('room_id');;
+  const room_id = $('#curr_room_name').attr('room_id');
   console.log('room_id = ', room_id);
   if (room_id != '') {
     join22(parseInt(room_id));
@@ -794,7 +794,7 @@ socket.on('joined', async ({ data }) => {
     subscribeTo(data.publishers, data.room);
 
     //url에 video_flag=off 이면 video를 끔
-    const video_flag = $('#curr_room_name').attr('video_flag');;
+    const video_flag = $('#curr_room_name').attr('video_flag');
     // console.log('video_flag = ', video_flag);
     
     // creating a custom variable to set video to ON and OFF. not relevant now
@@ -1278,7 +1278,7 @@ function setLocalVideoElement(localStream, feed, display, room) {
   }
 }
 
-const itemsPerPage = 1;
+const itemsPerPage = 2;
 let currentPage = 1;
 
 
@@ -1351,9 +1351,12 @@ function renderPage(pageNumber) {
 function setRemoteVideoElement(remoteStream, feed, display, talking=null) {
   // 여기서 최초로 remotepeer가 입장했을 때 currentPage가 1인 곳에 들어오게 되면 _subscribeUpdate(feed)가 바로 실행되고싶다.
   
-
   // If no feed exists just exit
   if (!feed) return;
+
+  const remoteContainers = document.querySelectorAll('#remotes > div');
+  console.log('remoteContainers >>> ', remoteContainers.length > 0 ? remoteContainers : '없어');
+
 
   // Check if the remote video element with the given feed ID already exists
   if (!document.getElementById('video_' + feed)) {
@@ -1383,17 +1386,16 @@ function setRemoteVideoElement(remoteStream, feed, display, talking=null) {
     noImageElem.width = 320;
     noImageElem.height = 240;
     noImageElem.id = `photo_${feed}`;    
-    
-    
+  
 
     // If the remoteStream is provided, set it as the source for the video element
     if (remoteStream) {
       remoteVideoStreamElem.srcObject = remoteStream;
       console.log('remoteStream >>>>> ', remoteStream.getTracks()); // audio만 나오고 있음
-      // const audioTracks = remoteStream.getAudioTracks()
       const videoTracks = remoteStream.getVideoTracks();
       console.log('videoTracks.length >>>>> ', videoTracks);
       console.log('currentPage in setRemoteVideoElement >>> ', currentPage);
+      
       if (videoTracks.length === 0) {
         // if(currentPage === 1){
         //   remoteVideoStreamElem.style.display = 'block';
