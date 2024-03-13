@@ -1138,7 +1138,7 @@ async function doAnswer(feed, display, offer) {
       }
     };
     pc.ontrack = event => {
-      console.log('pc.ontrack', event);
+      console.log('pc.ontrack', event); // streams 가 1개만 있음. 그래서 안나오는 중.
 
       event.track.onunmute = evt => {
         console.log('track.onunmute', evt);	
@@ -1152,7 +1152,7 @@ async function doAnswer(feed, display, offer) {
 
       
       const remoteStream = event.streams[0];
-      setRemoteVideoElement(remoteStream, feed, display);
+      setRemoteVideoElement(remoteStream, feed, display); // 여기서 처음에 audio만 오고있.
     };
 
     pcMap.set(feed, pc);
@@ -1203,7 +1203,7 @@ function setLocalVideoElement(localStream, feed, display, room) {
 
     // Create an image for no video
     const noImageElem = document.createElement('img')
-    noImageElem.src = '/images/blank_person.png'
+    noImageElem.src = '/images/sydney.png'
     noImageElem.width = 320;
     noImageElem.height = 240;
 
@@ -1244,7 +1244,7 @@ function setLocalVideoElement(localStream, feed, display, room) {
 
     // Create an image for no video
     const noImageElem = document.createElement('img')
-    noImageElem.src = '/images/blank_person.png'
+    noImageElem.src = '/images/sydney.png'
     noImageElem.width = 320;
     noImageElem.height = 240;
 
@@ -1278,61 +1278,63 @@ function setLocalVideoElement(localStream, feed, display, room) {
   }
 }
 
-const itemsPerPage = 2;
+const itemsPerPage = 1;
 let currentPage = 1;
 
+function firstScreenAction() {
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const remoteContainers = document.querySelectorAll('#remotes > div');
+
+  remoteContainers.forEach((container, index) => {
+
+    if (index >= startIndex && index < endIndex) {
+      container.style.display = 'block';
+      _subscribeUpdate(Number(container.id.split('_')[1]));
+      
+    } else {
+      container.style.display = 'none';
+      _unsubscribeUpdate(Number(container.id.split('_')[1]));
+    }
+  });
+}
 
 // 페이지 네이션 버튼 클릭
 document.getElementById('js-pagination').addEventListener('click', (event) => {
   if (event.target.tagName === 'BUTTON') {
     currentPage = parseInt(event.target.textContent);
-    renderPage(currentPage,null,null);
+    renderPage(currentPage);
   }
 });
 
 function renderPage(pageNumber) {
-
-  console.log('currentPage >>> ', currentPage);
-  console.log('remote peer가 들어오면 시작');
-  const startIndex = (pageNumber - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
   const remoteContainers = document.querySelectorAll('#remotes > div');
-  const paginationContainer = document.getElementById('js-pagination');
-  paginationContainer.innerHTML = '';
 
   // remoteContainers가 비어 있는 경우 함수 종료
   if (remoteContainers.length === 0) {
     return;
   }
 
-  console.log('remoteContainers >>> ', remoteContainers);
+  const startIndex = (pageNumber - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginationContainer = document.getElementById('js-pagination');
+  paginationContainer.innerHTML = '';  
 
-  // _subscribeUpdate(Number(container.id.split('_')[1]));
-  remoteContainers.forEach((container, index) => { // 여기에다가
-    console.log('container in renderpage>>> ', container);
-    console.log('index in renderpage >>> ', index);
-    
-
-    // _subscribeUpdate(Number(container.id.split('_')[1]));
-    if (index >= startIndex && index < endIndex) { // current page가 1이면 start는 0, endindex는 1. 맨 앞에 나온거에 대해 보여주며 subscribe해야됨
+  remoteContainers.forEach((container, index) => {
+    if (index >= startIndex && index < endIndex) {
       container.style.display = 'block';
       _subscribeUpdate(Number(container.id.split('_')[1]));
-      
     } else {
-      container.style.display = 'block';
+      container.style.display = 'none';
       _unsubscribeUpdate(Number(container.id.split('_')[1]));
     }
   });
-
-  // 따로 만들어줘야할 듯
-  // 위 remoteContainers는 remote 전체 배열을
   
   const totalItems = remoteContainers.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   
   if (pageNumber > totalPages) {
-    currentPage = totalPages > 0 ? totalPages : 1;
-    return renderPage(currentPage);
+    return renderPage(totalPages);
   }
   
   for (let i = 1; i <= totalPages; i++) {
@@ -1350,17 +1352,13 @@ function renderPage(pageNumber) {
 // Function to set the remote video element
 function setRemoteVideoElement(remoteStream, feed, display, talking=null) {
   // 여기서 최초로 remotepeer가 입장했을 때 currentPage가 1인 곳에 들어오게 되면 _subscribeUpdate(feed)가 바로 실행되고싶다.
-  
+
   // If no feed exists just exit
   if (!feed) return;
 
-  const remoteContainers = document.querySelectorAll('#remotes > div');
-  console.log('remoteContainers >>> ', remoteContainers.length > 0 ? remoteContainers : '없어');
-
-
   // Check if the remote video element with the given feed ID already exists
   if (!document.getElementById('video_' + feed)) {
-
+    
     console.log('===========inside remoteElement, feed element doesnt exist========')
     // Create a new span element to display the user's name and feed ID
     const nameElem = document.createElement('span');
@@ -1368,7 +1366,6 @@ function setRemoteVideoElement(remoteStream, feed, display, talking=null) {
     const audioVideo_btn = "<button onclick='_subscribeUpdate("+feed+");' class='btn btn-primary btn-xs' style='margin-left:2px;'>Audio Video</button>";
     nameElem.innerHTML = display + ' (' + feed + ')' + onlyAudio_btn + audioVideo_btn;
     nameElem.style.display = 'table';
-    
 
     // Create a new video element for displaying the remote stream
     const remoteVideoStreamElem = document.createElement('video');
@@ -1379,7 +1376,6 @@ function setRemoteVideoElement(remoteStream, feed, display, talking=null) {
     remoteVideoStreamElem.setAttribute('feed', feed);
     remoteVideoStreamElem.id = feed;
 
-
     // Create an image for no video
     const noImageElem = document.createElement('img');
     noImageElem.src = '/images/sydney.png';
@@ -1387,26 +1383,18 @@ function setRemoteVideoElement(remoteStream, feed, display, talking=null) {
     noImageElem.height = 240;
     noImageElem.id = `photo_${feed}`;    
   
+    // firstScreenAction(); // 여기에 두니 조금 되 보인다?
+    // 딱 여기서 없던 peer가 들어왔을 때 subscribeUpdate를 해주며 되는데...
 
     // If the remoteStream is provided, set it as the source for the video element
     if (remoteStream) {
       remoteVideoStreamElem.srcObject = remoteStream;
-      console.log('remoteStream >>>>> ', remoteStream.getTracks()); // audio만 나오고 있음
+      console.log('remoteStream.getTracks() >>>>> ', remoteStream.getTracks()); // audio 만 나오고 있음
       const videoTracks = remoteStream.getVideoTracks();
-      console.log('videoTracks.length >>>>> ', videoTracks);
-      console.log('currentPage in setRemoteVideoElement >>> ', currentPage);
       
       if (videoTracks.length === 0) {
-        // if(currentPage === 1){
-        //   remoteVideoStreamElem.style.display = 'block';
-        //   noImageElem.style.display = 'none';  
-        // } else {
-        //   remoteVideoStreamElem.style.display = 'none';
-        //   noImageElem.style.display = 'block'; 
-        // }
-        remoteVideoStreamElem.style.display = 'none';
-        noImageElem.style.display = 'block';
-        // _subscribeUpdate(feed);
+        remoteVideoStreamElem.style.display = 'block';
+        noImageElem.style.display = 'none';
       } else {
         remoteVideoStreamElem.style.display = 'block';
         noImageElem.style.display = 'none';
@@ -1427,22 +1415,31 @@ function setRemoteVideoElement(remoteStream, feed, display, talking=null) {
     document.getElementById('remotes').appendChild(remoteVideoContainer);
     
     // renderPage(currentPage);
-    // 최초로 remotepeer가 입장하고 currentPage가 1일 때 _subscribeUpdate(feed) 실행
-    // console.log('feed >>>>>>>>> ', feed);
-    // if (currentPage === 1) {
-    //   _subscribeUpdate(feed);
-    // } else {
-    //   return;
-    // }
 
-    const remoteContainers = document.querySelectorAll('.remote-container');
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const remoteContainers = document.querySelectorAll('#remotes > div');
+    console.log('remoteContainers in setRemoteVideoElement >>>>> ', remoteContainers);
+    console.log('currentPage in set >>> ', currentPage);    
+    console.log('기존에 없던 feed가 들어올 때만 찍히는 코드!!!')
+    
+    remoteContainers.forEach((container, index) => {
+      if (index >= startIndex && index < endIndex) {
+        container.style.display = 'block';
+        // _subscribeUpdate(Number(container.id.split('_')[1]));
+      } else {
+        container.style.display = 'none';
+        // _unsubscribeUpdate(Number(container.id.split('_')[1]));
+      }
+    });
+
     const paginationContainer = document.getElementById('js-pagination');
     
-    paginationContainer.innerHTML = '';
+    paginationContainer.innerHTML = '';   
     
     const totalItems = remoteContainers.length;
     const totalPages = Math.ceil(totalItems / itemsPerPage);
-    
+
     for (let i = 1; i <= totalPages; i++) {
       const pageButton = document.createElement('button');
       pageButton.textContent = i;
@@ -1452,10 +1449,10 @@ function setRemoteVideoElement(remoteStream, feed, display, talking=null) {
         pageButton.classList.add('clicked');
       } 
       
-      paginationContainer.appendChild(pageButton); 
+      paginationContainer.appendChild(pageButton);       
     }
   }
-
+  
   // If the video element already exists, update its properties
   else {
     console.log('===========inside remoteElement, feed element exist========')
@@ -1482,9 +1479,9 @@ function setRemoteVideoElement(remoteStream, feed, display, talking=null) {
 
       if (videoTracks.length === 0){
         remoteVideoStreamElem.style.display = 'none';
-        noImageElem.style.display = 'block';
+        // noImageElem.style.display = 'block';
       } else{
-        remoteVideoStreamElem.style.display = 'block';
+        // remoteVideoStreamElem.style.display = 'block';
         noImageElem.style.display = 'none';
       }
     } else{
@@ -1500,6 +1497,7 @@ function setRemoteVideoElement(remoteStream, feed, display, talking=null) {
       remoteVideoContainer.classList.remove('border', 'border-danger');
     }
   }
+  
 }
 
 function removeVideoElementByFeed(feed, stopTracks = true) {
