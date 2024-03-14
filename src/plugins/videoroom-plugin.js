@@ -824,6 +824,7 @@ class VideoRoomHandle extends Handle {
       room,
       // feed
       streams: [{ "type": "audio", "mid" : "0", "feed": feed } ],
+      // streams: [{ "type": "audio", "mid" : "0", "feed": feed }, { "type": "video", "mid" : "1", "feed": feed } ],
       // feed: streams[0].feed,
     };
 

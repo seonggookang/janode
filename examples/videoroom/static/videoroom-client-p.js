@@ -1,5 +1,6 @@
+/* eslint-disable multiline-comment-style */
 /* eslint-disable no-sparse-arrays */
-/* global io connect disconnect leave */
+/* global io $ connect disconnect create_room list_rooms*/
 
 'use strict';
 
@@ -159,9 +160,9 @@ const socket = io({
 // Functions for room actions
 // completely destroy target room
 function destroy_room(room, desc) {
-    if (confirm(desc + ' room을 삭제하겠습니까?')) {
-      _destroy({ room : room, permanent : false, secret : 'adminpwd' });
-    }
+  if (confirm(desc + ' room을 삭제하겠습니까?')) {
+    _destroy({ room : room, permanent : false, secret : 'adminpwd' });
+  }
 };
   
 // Join an hypothetical room: soon to be deleted
@@ -224,14 +225,14 @@ function trickle({ feed, candidate }) {
 }
 
 function update(subscribe, unsubscribe) {
-  let configureData = {}
+  let configureData = {};
   
   if (subscribe){
-    configureData.subscribe = subscribe
+    configureData.subscribe = subscribe;
   } 
 
   if (unsubscribe){
-    configureData.unsubscribe = unsubscribe
+    configureData.unsubscribe = unsubscribe;
   }
 
   const configId = getId();
@@ -725,7 +726,7 @@ socket.on('connect', () => {
   $('#disconnect, #create_room, #list_rooms' ).prop('disabled', false);
 
   //url 에 room_id 가 있으면 바로 
-  const room_id = $('#curr_room_name').attr('room_id');;
+  const room_id = $('#curr_room_name').attr('room_id');
   console.log('room_id = ', room_id);
   if (room_id != '') {
     join22(parseInt(room_id));
@@ -793,7 +794,7 @@ socket.on('joined', async ({ data }) => {
     subscribeTo(data.publishers, data.room);
 
     //url에 video_flag=off 이면 video를 끔
-    const video_flag = $('#curr_room_name').attr('video_flag');;
+    const video_flag = $('#curr_room_name').attr('video_flag');
     // console.log('video_flag = ', video_flag);
     
     // creating a custom variable to set video to ON and OFF. not relevant now
@@ -874,7 +875,10 @@ socket.on('configured', async ({ data, _id }) => {
 
 socket.on('updated', async ({ data, _id }) => {
   console.log('updated to feed as below', getDateTime());
-  console.log(data);
+  console.log('data in updated >>>>> ', data);
+
+  // 실험중일 때 나오는 값 ----->  { room : 1234 }
+  // 버튼을 클릭하면 나오는 값 ----> {jsep: {…}, room: 1234, streams: Array(2)}
 
   try {
     const answer = await doAnswer(data.streams[0].feed_id, data.streams[0].feed_display, data.jsep);
@@ -943,6 +947,7 @@ socket.on('leaving', ({ data }) => {
   if (data.feed) {
     removeVideoElementByFeed(data.feed);
     closePC(data.feed);
+    renderPage(currentPage);
   }
   _listRooms();
 });
@@ -1025,11 +1030,11 @@ async function _restartPublisher(feed) {
 }
 
 async function _subscribeUpdate(feed) {
-  update([{ "type": "video", "mid" : "1", "feed": feed }], null);
+  update([{ 'type': 'video', 'mid' : '1', 'feed': feed }], null);
 }
 
 async function _unsubscribeUpdate(feed) {
-  update(null, [{ "type": "video", "mid" : "1", "feed": feed, "send": false }]);
+  update(null, [{ 'type': 'video', 'mid' : '1', 'feed': feed, 'send': false }]);
 }
 
 
@@ -1133,7 +1138,7 @@ async function doAnswer(feed, display, offer) {
       }
     };
     pc.ontrack = event => {
-      console.log('pc.ontrack', event);
+      console.log('pc.ontrack', event); // streams 가 1개만 있음. 그래서 안나오는 중.
 
       event.track.onunmute = evt => {
         console.log('track.onunmute', evt);	
@@ -1147,7 +1152,7 @@ async function doAnswer(feed, display, offer) {
 
       
       const remoteStream = event.streams[0];
-      setRemoteVideoElement(remoteStream, feed, display);
+      setRemoteVideoElement(remoteStream, feed, display); // 여기서 처음에 audio만 오고있.
     };
 
     pcMap.set(feed, pc);
@@ -1187,20 +1192,20 @@ function setLocalVideoElement(localStream, feed, display, room) {
     nameElem.innerHTML = display + ' (' + feed + ')';
     nameElem.style.display = 'table';
 
-     // Create a video element for the local stream
-     const localVideoStreamElem = document.createElement('video');
-     localVideoStreamElem.width = 320;
-     localVideoStreamElem.height = 240;
-     localVideoStreamElem.autoplay = true;
-     localVideoStreamElem.muted = 'muted'; // Mute the local video
-     localVideoStreamElem.style.cssText = '-moz-transform: scale(-1, 1); -webkit-transform: scale(-1, 1); -o-transform: scale(-1, 1); transform: scale(-1, 1); filter: FlipH;';
-     localVideoStreamElem.id = feed;
+    // Create a video element for the local stream
+    const localVideoStreamElem = document.createElement('video');
+    localVideoStreamElem.width = 320;
+    localVideoStreamElem.height = 240;
+    localVideoStreamElem.autoplay = true;
+    localVideoStreamElem.muted = 'muted'; // Mute the local video
+    localVideoStreamElem.style.cssText = '-moz-transform: scale(-1, 1); -webkit-transform: scale(-1, 1); -o-transform: scale(-1, 1); transform: scale(-1, 1); filter: FlipH;';
+    localVideoStreamElem.id = feed;
 
-     // Create an image for no video
-     const noImageElem = document.createElement('img')
-     noImageElem.src = '/images/blank_person.png'
-     noImageElem.width = 320;
-     noImageElem.height = 240;
+    // Create an image for no video
+    const noImageElem = document.createElement('img')
+    noImageElem.src = '/images/sydney.png'
+    noImageElem.width = 320;
+    noImageElem.height = 240;
 
     // If the localStream is provided, create a the video element and set the localstream as the source for the video element 
     if (localStream) {
@@ -1220,16 +1225,16 @@ function setLocalVideoElement(localStream, feed, display, room) {
       noImageElem.style.display = 'none'; 
     }    
 
-      // Create a container div for the local video (without video element)
-      // **** the create container div could have been moved out of the if statement
-      const localVideoContainer = document.createElement('div')
-      localVideoContainer.id = 'video_' + feed
-      localVideoContainer.appendChild(nameElem)
-      localVideoContainer.appendChild(localVideoStreamElem);
-      localVideoContainer.appendChild(noImageElem)
+    // Create a container div for the local video (without video element)
+    // **** the create container div could have been moved out of the if statement
+    const localVideoContainer = document.createElement('div')
+    localVideoContainer.id = 'video_' + feed
+    localVideoContainer.appendChild(nameElem)
+    localVideoContainer.appendChild(localVideoStreamElem);
+    localVideoContainer.appendChild(noImageElem)
 
-      // Append the container to the 'locals' element in the HTML
-      document.getElementById('locals').appendChild(localVideoContainer)
+    // Append the container to the 'locals' element in the HTML
+    document.getElementById('locals').appendChild(localVideoContainer)
     
   }
   else {
@@ -1239,7 +1244,7 @@ function setLocalVideoElement(localStream, feed, display, room) {
 
     // Create an image for no video
     const noImageElem = document.createElement('img')
-    noImageElem.src = '/images/blank_person.png'
+    noImageElem.src = '/images/sydney.png'
     noImageElem.width = 320;
     noImageElem.height = 240;
 
@@ -1273,77 +1278,170 @@ function setLocalVideoElement(localStream, feed, display, room) {
   }
 }
 
+const itemsPerPage = 2;
+let currentPage = 1;
+
+// 페이지 네이션 버튼 클릭
+document.getElementById('js-pagination').addEventListener('click', (event) => {
+  if (event.target.tagName === 'BUTTON') {
+    currentPage = parseInt(event.target.textContent);
+    renderPage(currentPage);
+  }
+});
+
+function renderPage(pageNumber) {
+  const remoteContainers = document.querySelectorAll('#remotes > div');
+
+  const startIndex = (pageNumber - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginationContainer = document.getElementById('js-pagination');
+  paginationContainer.innerHTML = '';  
+
+  // remoteContainers가 비어 있는 경우 함수 종료
+  if (remoteContainers.length === 0) {
+    return;
+  }
+
+  remoteContainers.forEach((container, index) => {
+    if (index >= startIndex && index < endIndex) {
+      container.style.display = 'block';
+      _subscribeUpdate(Number(container.id.split('_')[1]));
+    } else {
+      container.style.display = 'none';
+      _unsubscribeUpdate(Number(container.id.split('_')[1]));
+    }
+  });
+  
+  const totalItems = remoteContainers.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  
+  if (pageNumber > totalPages) {
+    return renderPage(totalPages);
+  }
+
+  for (let i = 1; i <= totalPages; i++) {
+    const pageButton = document.createElement('button');
+    pageButton.textContent = i;
+    pageButton.className = 'pagination-button';
+
+    if (i === pageNumber) {
+      pageButton.classList.add('clicked');
+    }
+    paginationContainer.appendChild(pageButton);
+  } 
+}
+
+// let isFlagTrue = true;
+let renderCount = 0;
 // Function to set the remote video element
 function setRemoteVideoElement(remoteStream, feed, display, talking=null) {
-
+  // 여기서 최초로 remotepeer가 입장했을 때 currentPage가 1인 곳에 들어오게 되면 _subscribeUpdate(feed)가 바로 실행되고싶다.
   // If no feed exists just exit
-  if (!feed) return;
 
+
+  if (!feed) return;
+  
   // Check if the remote video element with the given feed ID already exists
   if (!document.getElementById('video_' + feed)) {
+    
 
     console.log('===========inside remoteElement, feed element doesnt exist========')
     // Create a new span element to display the user's name and feed ID
     const nameElem = document.createElement('span');
-    // const onlyAudio_btn = "<button onclick='_restartSubscriberAudio("+feed+");' class='btn btn-primary btn-xs' style='margin-left:2px;'>Audio Only</button>";
     const onlyAudio_btn = "<button onclick='_unsubscribeUpdate("+feed+");' class='btn btn-primary btn-xs' style='margin-left:2px;'>Audio Only</button>";
-    // const audioVideo_btn = "<button onclick='_restartSubscriberAudioVideo("+feed+");' class='btn btn-primary btn-xs' style='margin-left:2px;'>Audio Video</button>";
     const audioVideo_btn = "<button onclick='_subscribeUpdate("+feed+");' class='btn btn-primary btn-xs' style='margin-left:2px;'>Audio Video</button>";
     nameElem.innerHTML = display + ' (' + feed + ')' + onlyAudio_btn + audioVideo_btn;
     nameElem.style.display = 'table';
-    
 
     // Create a new video element for displaying the remote stream
     const remoteVideoStreamElem = document.createElement('video');
     remoteVideoStreamElem.width = 320;
     remoteVideoStreamElem.height = 240;
     remoteVideoStreamElem.autoplay = true;
+    remoteVideoStreamElem.style.cssText = '-moz-transform: scale(-1, 1); -webkit-transform: scale(-1, 1); -o-transform: scale(-1, 1); transform: scale(-1, 1); filter: FlipH;';
     remoteVideoStreamElem.setAttribute('feed', feed);
     remoteVideoStreamElem.id = feed;
-
 
     // Create an image for no video
     const noImageElem = document.createElement('img');
     noImageElem.src = '/images/sydney.png';
     noImageElem.width = 320;
     noImageElem.height = 240;
-    noImageElem.id = `photo_${feed}`;
+    noImageElem.id = `photo_${feed}`;    
+  
+    // firstScreenAction(); // 여기에 두니 조금 되 보인다?
+    // 딱 여기서 없던 peer가 들어왔을 때 subscribeUpdate를 해주며 되는데...
 
-    // Aply CSS transformations for mirroring the video horizontally
-    remoteVideoStreamElem.style.cssText = '-moz-transform: scale(-1, 1); -webkit-transform: scale(-1, 1); -o-transform: scale(-1, 1); transform: scale(-1, 1); filter: FlipH;';
-    
     // If the remoteStream is provided, set it as the source for the video element
     if (remoteStream) {
       remoteVideoStreamElem.srcObject = remoteStream;
-
-      // const audioTracks = remoteStream.getAudioTracks()
-      const videoTracks = remoteStream.getVideoTracks()
-
-      if (videoTracks.length === 0){
-        remoteVideoStreamElem.style.display = 'none';
-        noImageElem.style.display = 'block';
-      } else{
+      console.log('remoteStream.getTracks() >>>>> ', remoteStream.getTracks()); // audio 만 나오고 있음
+      const videoTracks = remoteStream.getVideoTracks();
+      
+      if (videoTracks.length === 0) {
+        remoteVideoStreamElem.style.display = 'block';
+        noImageElem.style.display = 'none';
+      } else {
         remoteVideoStreamElem.style.display = 'block';
         noImageElem.style.display = 'none';
       }
-    } else{
+    } else {
       noImageElem.style.display = 'none';
     }
 
     // Create a container div for the remote video 
     const remoteVideoContainer = document.createElement('div');
     remoteVideoContainer.id = 'video_' + feed;
+    remoteVideoContainer.classList.add('remote-container');
     remoteVideoContainer.appendChild(nameElem);
     remoteVideoContainer.appendChild(remoteVideoStreamElem);
     remoteVideoContainer.appendChild(noImageElem);
 
     // Append the container to the 'remotes' element in the HTML
     document.getElementById('remotes').appendChild(remoteVideoContainer);
-  }
+    
+    // renderPage(currentPage);
 
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const remoteContainers = document.querySelectorAll('#remotes > div');
+    console.log('remoteContainers in setRemoteVideoElement >>>>> ', remoteContainers);
+    console.log('currentPage in set >>> ', currentPage);    
+    console.log('기존에 없던 feed가 들어올 때만 찍히는 코드!!!')
+    
+    remoteContainers.forEach((container, index) => {
+      if (index >= startIndex && index < endIndex) {
+        container.style.display = 'block';
+        // _subscribeUpdate(Number(container.id.split('_')[1]));
+      } else {
+        container.style.display = 'none';
+        // _unsubscribeUpdate(Number(container.id.split('_')[1]));
+      }
+    });
+
+    const paginationContainer = document.getElementById('js-pagination');
+    
+    paginationContainer.innerHTML = '';   
+    
+    const totalItems = remoteContainers.length;
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+    for (let i = 1; i <= totalPages; i++) {
+      const pageButton = document.createElement('button');
+      pageButton.textContent = i;
+      pageButton.className = 'pagination-button';
+      
+      if(i === currentPage) {
+        pageButton.classList.add('clicked');
+      } 
+      
+      paginationContainer.appendChild(pageButton);       
+    }
+    
+  }
+  
   // If the video element already exists, update its properties
   else {
-
     console.log('===========inside remoteElement, feed element exist========')
     // Get the video container by its feed
     const remoteVideoContainer = document.getElementById('video_' + feed);
@@ -1353,9 +1451,7 @@ function setRemoteVideoElement(remoteStream, feed, display, talking=null) {
 
     if (display) {
       const nameElem = remoteVideoContainer.getElementsByTagName('span')[0];
-       // const onlyAudio_btn = "<button onclick='_restartSubscriberAudio("+feed+");' class='btn btn-primary btn-xs' style='margin-left:2px;'>Audio Only</button>";
       const onlyAudio_btn = "<button onclick='_unsubscribeUpdate("+feed+");' class='btn btn-primary btn-xs' style='margin-left:2px;'>Audio Only</button>";
-      // const audioVideo_btn = "<button onclick='_restartSubscriberAudioVideo("+feed+");' class='btn btn-primary btn-xs' style='margin-left:2px;'>Audio Video</button>";
       const audioVideo_btn = "<button onclick='_subscribeUpdate("+feed+");' class='btn btn-primary btn-xs' style='margin-left:2px;'>Audio Video</button>";
       nameElem.innerHTML = display + ' (' + feed + ')' + onlyAudio_btn + audioVideo_btn;
     }
@@ -1366,25 +1462,52 @@ function setRemoteVideoElement(remoteStream, feed, display, talking=null) {
       remoteVideoStreamElem.srcObject = remoteStream;
 
       // const audioTracks = remoteStream.getAudioTracks()
-      const videoTracks = remoteStream.getVideoTracks()
+      const videoTracks = remoteStream.getVideoTracks();
 
       if (videoTracks.length === 0){
         remoteVideoStreamElem.style.display = 'none';
-        noImageElem.style.display = 'block';
-      } else{
-        remoteVideoStreamElem.style.display = 'block';
+        // noImageElem.style.display = 'block';
+      } else {
+        // remoteVideoStreamElem.style.display = 'block';
         noImageElem.style.display = 'none';
       }
-    } else{
+    } else { 
+      console.log('누군가 새롭게 들어올떄마다 출력되는 코드')
+      
+      // itemsPerPage만큼 수행하면 될 것으로 보임
+      // if(isFlagTrue){
+      //   for(let i = 0; i < itemsPerPage; i++){
+      //     renderPage(currentPage);
+      //   }
+        // isFlagTrue = false; // 이제 다시는 실행되지 않도록 플래그 업데이트
+        // 아! 이미 1명째가 돌면 isFlagTrue는 false가 되있겠구나.
+        // 그럼 새로운 boolean을 만들어야하나? 새로운 인원을 위해서?
+        // 그럼 count 변수를 만들어서 그 숫자 만큼은 수행을 하라라고 해야 겠는데?
+      // }
+
+      // if(isFlagTrue){
+      //   // itemsPerPage 만큼 renderPage(currentPage)를 실행
+      //   for (let i = 0; i < itemsPerPage; i++) {
+      //     renderPage(currentPage);
+      //   }
+      //   isFlagTrue = false;
+      // }
+      console.log('renderCount >>> ', renderCount)
+      renderCount++;
+
+      // itemsPerPage에 맞게 renderPage(currentPage)를 호출합니다.
+      if (renderCount <= itemsPerPage) {
+        renderPage(currentPage);
+      }
       console.log('=========no pic========');
     }
 
     if (talking == true){
-      console.log("=====talking is true=======")
+      console.log('=====talking is true=======');
       remoteVideoContainer.classList.add('border', 'border-danger');
 
     } else if (talking == false){
-      console.log("=====talking is false=======")
+      console.log('=====talking is false=======');
       remoteVideoContainer.classList.remove('border', 'border-danger');
     }
   }

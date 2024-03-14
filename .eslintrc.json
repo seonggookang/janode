@@ -31,8 +31,8 @@
             "single"
         ],
         "semi": [
-            "warn",
-            "always"
+            "never",
+            // "always"
         ],
         "no-empty": "off",
         "multiline-comment-style": 1
