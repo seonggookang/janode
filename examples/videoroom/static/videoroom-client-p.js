@@ -1278,26 +1278,8 @@ function setLocalVideoElement(localStream, feed, display, room) {
   }
 }
 
-const itemsPerPage = 1;
+const itemsPerPage = 2;
 let currentPage = 1;
-
-function firstScreenAction() {
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const remoteContainers = document.querySelectorAll('#remotes > div');
-
-  remoteContainers.forEach((container, index) => {
-
-    if (index >= startIndex && index < endIndex) {
-      container.style.display = 'block';
-      _subscribeUpdate(Number(container.id.split('_')[1]));
-      
-    } else {
-      container.style.display = 'none';
-      _unsubscribeUpdate(Number(container.id.split('_')[1]));
-    }
-  });
-}
 
 // 페이지 네이션 버튼 클릭
 document.getElementById('js-pagination').addEventListener('click', (event) => {
@@ -1310,15 +1292,15 @@ document.getElementById('js-pagination').addEventListener('click', (event) => {
 function renderPage(pageNumber) {
   const remoteContainers = document.querySelectorAll('#remotes > div');
 
-  // remoteContainers가 비어 있는 경우 함수 종료
-  if (remoteContainers.length === 0) {
-    return;
-  }
-
   const startIndex = (pageNumber - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const paginationContainer = document.getElementById('js-pagination');
   paginationContainer.innerHTML = '';  
+
+  // remoteContainers가 비어 있는 경우 함수 종료
+  if (remoteContainers.length === 0) {
+    return;
+  }
 
   remoteContainers.forEach((container, index) => {
     if (index >= startIndex && index < endIndex) {
@@ -1336,7 +1318,7 @@ function renderPage(pageNumber) {
   if (pageNumber > totalPages) {
     return renderPage(totalPages);
   }
-  
+
   for (let i = 1; i <= totalPages; i++) {
     const pageButton = document.createElement('button');
     pageButton.textContent = i;
@@ -1349,16 +1331,20 @@ function renderPage(pageNumber) {
   } 
 }
 
+// let isFlagTrue = true;
+let renderCount = 0;
 // Function to set the remote video element
 function setRemoteVideoElement(remoteStream, feed, display, talking=null) {
   // 여기서 최초로 remotepeer가 입장했을 때 currentPage가 1인 곳에 들어오게 되면 _subscribeUpdate(feed)가 바로 실행되고싶다.
-
   // If no feed exists just exit
-  if (!feed) return;
 
+
+  if (!feed) return;
+  
   // Check if the remote video element with the given feed ID already exists
   if (!document.getElementById('video_' + feed)) {
     
+
     console.log('===========inside remoteElement, feed element doesnt exist========')
     // Create a new span element to display the user's name and feed ID
     const nameElem = document.createElement('span');
@@ -1451,6 +1437,7 @@ function setRemoteVideoElement(remoteStream, feed, display, talking=null) {
       
       paginationContainer.appendChild(pageButton);       
     }
+    
   }
   
   // If the video element already exists, update its properties
@@ -1480,11 +1467,38 @@ function setRemoteVideoElement(remoteStream, feed, display, talking=null) {
       if (videoTracks.length === 0){
         remoteVideoStreamElem.style.display = 'none';
         // noImageElem.style.display = 'block';
-      } else{
+      } else {
         // remoteVideoStreamElem.style.display = 'block';
         noImageElem.style.display = 'none';
       }
-    } else{
+    } else { 
+      console.log('누군가 새롭게 들어올떄마다 출력되는 코드')
+      
+      // itemsPerPage만큼 수행하면 될 것으로 보임
+      // if(isFlagTrue){
+      //   for(let i = 0; i < itemsPerPage; i++){
+      //     renderPage(currentPage);
+      //   }
+        // isFlagTrue = false; // 이제 다시는 실행되지 않도록 플래그 업데이트
+        // 아! 이미 1명째가 돌면 isFlagTrue는 false가 되있겠구나.
+        // 그럼 새로운 boolean을 만들어야하나? 새로운 인원을 위해서?
+        // 그럼 count 변수를 만들어서 그 숫자 만큼은 수행을 하라라고 해야 겠는데?
+      // }
+
+      // if(isFlagTrue){
+      //   // itemsPerPage 만큼 renderPage(currentPage)를 실행
+      //   for (let i = 0; i < itemsPerPage; i++) {
+      //     renderPage(currentPage);
+      //   }
+      //   isFlagTrue = false;
+      // }
+      console.log('renderCount >>> ', renderCount)
+      renderCount++;
+
+      // itemsPerPage에 맞게 renderPage(currentPage)를 호출합니다.
+      if (renderCount <= itemsPerPage) {
+        renderPage(currentPage);
+      }
       console.log('=========no pic========');
     }
 
@@ -1497,7 +1511,6 @@ function setRemoteVideoElement(remoteStream, feed, display, talking=null) {
       remoteVideoContainer.classList.remove('border', 'border-danger');
     }
   }
-  
 }
 
 function removeVideoElementByFeed(feed, stopTracks = true) {
