@@ -29,7 +29,7 @@ var local_display;
 
 
 // Initial the current page and the number of items per page
-const itemsPerPage = window.innerWidth > 600 ? 1 : 1;
+const itemsPerPage = window.innerWidth > 600 ? 2 : 1;
 let currentPage = 1;
 
 let subscribeList = []
@@ -825,8 +825,7 @@ socket.on('disconnect', () => {
   pendingOfferMap.clear();
   removeAllVideoElements();
   closeAllPCs();
-  renderPage(currentPage);
-  renderButton(currentPage)
+  document.getElementById('js-pagination').innerHTML = '';
 });
 
 socket.on('leaveAll', ({ data }) => {
@@ -1056,8 +1055,7 @@ socket.on('leaving', ({ data }) => {
   if (data.feed) {
     removeVideoElementByFeed(data.feed);
     closePC(data.feed);
-    renderPage(currentPage);
-    renderButton(currentPage)
+    document.getElementById('js-pagination').innerHTML = '';
   }
   _listRooms();
 });
@@ -1430,14 +1428,14 @@ function setLocalVideoElement(localStream, feed, display, room) {
 // New code insert start ---------
 
 // When the page is clicked
-document.getElementById('js-pagination').addEventListener('click', (event) => {
-  if (event.target.tagName === 'BUTTON') {
-    currentPage = parseInt(event.target.textContent);
-    renderButton(currentPage);
-    renderPage(currentPage)
-    renderUpdate()
-  }
-});
+// document.getElementById('js-pagination').addEventListener('click', (event) => {
+//   if (event.target.tagName === 'BUTTON') {
+//     currentPage = parseInt(event.target.textContent);
+//     // renderButton(currentPage);
+//     renderPage(currentPage)
+//     renderUpdate()
+//   }
+// });
 
 
 // Function to subscribe and unsubsribe to the list of available feeds
@@ -1467,90 +1465,80 @@ function renderPage(pageNumber) {
   subscribeList = [] // reset the list 
   unSubscribeList = [] // reset the list
 
-  // Get the initial index and final index for the required divs
   const startIndex = (pageNumber - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   
-  // Get the remote container element
   const remoteContainers = document.querySelectorAll('#remotes > div');
 
   console.log("====Inside renderPage before add to the list======",subscribeList)
 
-  // Get each existing div elements and set to display if within the initial and final index
   remoteContainers.forEach((container, index) => {
       
-  console.log("the remote container is", container)
-  let feed = parseInt(container.querySelector('span').innerText.match(/\((\d+)\)/)[1]);
+    let feed = parseInt(container.querySelector('span').innerText.match(/\((\d+)\)/)[1]);
 
-  if (index >= startIndex && index < endIndex) {
-    // _subscribeUpdate(feed)
-    if (!subscribeList.includes(feed)){
-      console.log("=====the data pushed is=====", feed)
-      subscribeList.push(feed)
+    if (index >= startIndex && index < endIndex) {
+      if (!subscribeList.includes(feed)){
+        console.log("=====the data pushed is=====", feed)
+        subscribeList.push(feed)
+      }
+      container.style.display = 'block';
+    } 
+    else {
+      if (!unSubscribeList.includes(feed)){
+        unSubscribeList.push(feed)
+      }
+      container.style.display = 'none';
     }
-
-    container.style.display = 'block';
-  } else {
-    // _unsubscribeUpdate(feed)
-    if (!unSubscribeList.includes(feed)){
-      unSubscribeList.push(feed)
-    }
-    container.style.display = 'none';
-  }
   });
-}
 
-// Function to create the pagination buttons
-function renderButton(pageNumber){
-
-  // currentPage = pageNumber
-
-  console.log("=====inside the renderButton=======", pageNumber)
-  // Get the pagination container element
   const paginationContainer = document.getElementById('js-pagination');
-  // Get the remote container element
-  const remoteContainers = document.querySelectorAll('#remotes > div');
-
-  // Get the total number of items available in the remote container
-  const totalItems = remoteContainers.length;
-
-  // Calculate the number of pages to create e.g if itemsPerPage is 2 and there are 3 items, 
-  // the total pages will be 2
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-  
-  // Clear the existing pagination container to create a set of buttons
   paginationContainer.innerHTML = '';
 
-
-  // Check if the current page becomes empty
-  if ((pageNumber - 1) * itemsPerPage >= totalItems) {
-    // If the current page is empty, move to the previous page
-    currentPage = Math.max(1, currentPage - 1);
-  }
-
-
-  // Creating the pagination buttons depends on the totalpages
-  // Example, if there are 5 pages, create 5 paginations buttons
-  for (let i = 1; i <= totalPages; i++) {
-
-    // Create button
-    const pageButton = document.createElement('button');
-    
-    // Add text to the button with text representing the iteration index
-    pageButton.textContent = i;
-
-    // Add button class
-    pageButton.className = 'pagination-button';
-
-    // If the iteration index is equal to the page number, add a clicked class to highlist the current button
-    if (i === currentPage) {
-      pageButton.classList.add('clicked');
+  const prevButton = document.createElement('button');
+  prevButton.textContent = '<';
+  prevButton.id = 'prevPage';
+  prevButton.classList.add('pagination-button');
+  prevButton.addEventListener('click', () => {
+    if (currentPage > 1) {
+      currentPage--;
+      renderPage(currentPage);
+      renderUpdate()
+    } else {
+      alert('첫 번째 페이지입니다.');
     }
+  });
 
-    // Append the button to the page container
-    paginationContainer.appendChild(pageButton);
-  }
+  // Create the next button
+  const nextButton = document.createElement('button');
+  nextButton.textContent = '>';
+  nextButton.id = 'nextPage';
+  nextButton.classList.add('pagination-button');
+  nextButton.addEventListener('click', () => {
+    const totalItems = document.querySelectorAll('#remotes > div').length;
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    
+    if (currentPage < totalPages) {
+      currentPage++;
+      renderPage(currentPage);
+      renderUpdate()
+    } else {
+      alert('마지막 페이지입니다.');
+    }
+  });
 
+  // Create the current page display
+  const currentPageDisplay = document.createElement('span');
+  currentPageDisplay.id = 'currentPage';
+
+  // Update current page display
+  const totalItems = document.querySelectorAll('#remotes > div').length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  currentPageDisplay.textContent = '\u00A0' + currentPage+ '\u00A0' + ' / ' + '\u00A0' + totalPages;
+
+  // Append buttons and current page display to the pagination container
+  paginationContainer.appendChild(prevButton);
+  paginationContainer.appendChild(currentPageDisplay);
+  paginationContainer.appendChild(nextButton);
 }
 
 // Function to set the remote video element
@@ -1623,7 +1611,7 @@ function setRemoteVideoElement(remoteStream, feed, display, talking=null) {
     // Append the container to the 'remotes' element in the HTML
     document.getElementById('remotes').appendChild(remoteVideoContainer);
 
-    renderButton(currentPage)
+    // renderButton(currentPage)
     renderPage(currentPage)
   }
 
