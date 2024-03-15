@@ -29,7 +29,7 @@ var local_display;
 
 
 // Initial the current page and the number of items per page
-const itemsPerPage = window.innerWidth > 600 ? 2 : 1;
+const itemsPerPage = window.innerWidth > 600 ? 1 : 1;
 let currentPage = 1;
 
 let subscribeList = []
@@ -825,6 +825,8 @@ socket.on('disconnect', () => {
   pendingOfferMap.clear();
   removeAllVideoElements();
   closeAllPCs();
+  renderPage(currentPage);
+  renderButton(currentPage)
 });
 
 socket.on('leaveAll', ({ data }) => {
@@ -1564,10 +1566,11 @@ function setRemoteVideoElement(remoteStream, feed, display, talking=null) {
     // Create a new span element to display the user's name and feed ID
     const nameElem = document.createElement('span');
     // const onlyAudio_btn = "<button onclick='_restartSubscriberAudio("+feed+");' class='btn btn-primary btn-xs' style='margin-left:2px;'>Audio Only</button>";
-    const onlyAudio_btn = "<button onclick='_unsubscribeUpdate("+feed+");' class='btn btn-primary btn-xs' style='margin-left:2px;'>Audio Only</button>";
+    // const onlyAudio_btn = "<button onclick='_unsubscribeUpdate("+feed+");' class='btn btn-primary btn-xs' style='margin-left:2px;'>Audio Only</button>";
     // const audioVideo_btn = "<button onclick='_restartSubscriberAudioVideo("+feed+");' class='btn btn-primary btn-xs' style='margin-left:2px;'>Audio Video</button>";
-    const audioVideo_btn = "<button onclick='_subscribeUpdate("+feed+");' class='btn btn-primary btn-xs' style='margin-left:2px;'>Audio Video</button>";
-    nameElem.innerHTML = display + ' (' + feed + ')' + onlyAudio_btn + audioVideo_btn;
+    // const audioVideo_btn = "<button onclick='_subscribeUpdate("+feed+");' class='btn btn-primary btn-xs' style='margin-left:2px;'>Audio Video</button>";
+    // nameElem.innerHTML = display + ' (' + feed + ')' + onlyAudio_btn + audioVideo_btn;
+    nameElem.innerHTML = display + ' (' + feed + ')'
     nameElem.style.display = 'table';
 
     // Create a new video element for displaying the remote stream
@@ -1639,10 +1642,11 @@ function setRemoteVideoElement(remoteStream, feed, display, talking=null) {
     if (display) {
       const nameElem = remoteVideoContainer.getElementsByTagName('span')[0];
        // const onlyAudio_btn = "<button onclick='_restartSubscriberAudio("+feed+");' class='btn btn-primary btn-xs' style='margin-left:2px;'>Audio Only</button>";
-      const onlyAudio_btn = "<button onclick='_unsubscribeUpdate("+feed+");' class='btn btn-primary btn-xs' style='margin-left:2px;'>Audio Only</button>";
+      // const onlyAudio_btn = "<button onclick='_unsubscribeUpdate("+feed+");' class='btn btn-primary btn-xs' style='margin-left:2px;'>Audio Only</button>";
       // const audioVideo_btn = "<button onclick='_restartSubscriberAudioVideo("+feed+");' class='btn btn-primary btn-xs' style='margin-left:2px;'>Audio Video</button>";
-      const audioVideo_btn = "<button onclick='_subscribeUpdate("+feed+");' class='btn btn-primary btn-xs' style='margin-left:2px;'>Audio Video</button>";
-      nameElem.innerHTML = display + ' (' + feed + ')' + onlyAudio_btn + audioVideo_btn;
+      // const audioVideo_btn = "<button onclick='_subscribeUpdate("+feed+");' class='btn btn-primary btn-xs' style='margin-left:2px;'>Audio Video</button>";
+      // nameElem.innerHTML = display + ' (' + feed + ')' + onlyAudio_btn + audioVideo_btn;
+      nameElem.innerHTML = display + ' (' + feed + ')'
     }
 
     // If the remoteStream is provided, update the source for the video element

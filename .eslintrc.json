@@ -27,11 +27,11 @@
             }
         ],
         "quotes": [
-            "warn",
+            "never",
             "single"
         ],
         "semi": [
-            "warn",
+            "never",
             "always"
         ],
         "no-empty": "off",

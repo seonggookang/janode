@@ -211,6 +211,9 @@ class VideoRoomHandle extends Handle {
           janode_event.data.display = message_data.display;
           /* [multistream] add streams info to the subscriber joined event */
           if (typeof message_data.streams !== 'undefined') janode_event.data.streams = message_data.streams;
+
+          // Inside videoroom plugin;
+          console.log("=======Inside attached of videoroom plugin======", janode_event.data)
           janode_event.event = PLUGIN_EVENT.SUB_JOINED;
           break;
 
@@ -815,23 +818,16 @@ class VideoRoomHandle extends Handle {
    * @param {string} [params.token] - The optional token needed
    * @returns {Promise<module:videoroom-plugin~VIDEOROOM_EVENT_SUB_JOINED>}
    */
-  async joinSubscriber({ room, feed, streams, audio, video, offer_video, data, private_id, sc_substream_layer, sc_substream_fallback_ms, sc_temporal_layers, autoupdate, token }) {
-    console.log("========JoinSubscribe Feed========", feed)
-    
+  async joinSubscriber({ room, feed, streams, audio, video, offer_video, data, private_id, sc_substream_layer, sc_substream_fallback_ms, sc_temporal_layers, autoupdate, token }) {    
     const body = {
       request: REQUEST_JOIN,
       ptype: PTYPE_LISTENER,
       room,
-      // feed
-      streams: [{ "type": "audio", "mid" : "0", "feed": feed } ],
-      // feed: streams[0].feed,
+      streams,
     };
-
-    console.log("========= JoinSubscriber=========", body)
     if (Array.isArray(streams)) body.streams = streams;
     if (typeof audio === 'boolean') body.audio = audio;
     if (typeof video === 'boolean') body.video = video;
-    // if (typeof feed === 'number') body.streams.feed = feed;
     if (typeof data === 'boolean') body.data = data;
     if (typeof offer_video === 'boolean') body.offer_video = offer_video;
     if (typeof private_id === 'number') body.private_id = private_id;
@@ -842,17 +838,12 @@ class VideoRoomHandle extends Handle {
     /* [multistream] */
     if (typeof autoupdate === 'boolean') body.autoupdate = autoupdate;
 
-    console.log("========= JoinSubscriber body after booleans=========", body)
-
     const response = await this.message(body);
-    console.log('=========Response after creating JoinSubscriber', response)
     const { event, data: evtdata } = response._janode || {};
-    console.log('=========Response after creating JoinSubscriber _janode', evtdata)
-    console.log('=========Response after creating JoinSubscriber _janode streams', evtdata.streams[0].feed_id)
+    
     if (event === PLUGIN_EVENT.SUB_JOINED){
       evtdata.feed = evtdata.streams[0].feed_id
       evtdata.display = evtdata.streams[0].feed_display
-      console.log("==========Modify response from JoinSubscriber========", evtdata)
       return evtdata;
     }
       
