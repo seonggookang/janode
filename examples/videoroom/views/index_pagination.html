@@ -24,6 +24,10 @@
       margin-right: 10px;
     }
 
+    .border-talking {
+      border: 3px solid red
+    }
+
     .pagination-button {
       width: 50px;
       height: 50px;
@@ -53,17 +57,12 @@
     #prevPage,
     #nextPage {
       font-size: 37px;
-      margin-left: 5px;
-      /* 왼쪽과 오른쪽 버튼 간격 조절 */
-
     }
 
     #prevPage:hover,
     #nextPage:hover {
       box-shadow: 0px 0px 5px 0px rgba(0, 0, 0, 0.5);
-      /* 호버 시 음영 효과 추가 */
       background-color: red;
-      /* 호버 시 색상을 빨간색으로 변경 */
     }
   </style>
 </head>
@@ -228,15 +227,15 @@
                 <div id="js-pagination" style='display: flex; justify-content: center;'></div> -->
                       <div style='display: flex; align-items: center;'>
                         <span style="font-size: 16px;"> -- REMOTES -- </span>
-                        <span id="js-pagination" style="display: flex; justify-content: center; align-items: center;">
-                          <!-- <button id="prevPage">&lt;</button>
-                          <span id="currentPage"></span>
-                          <button id="nextPage">&gt;</button> -->
-                        </span>
+                        <span id="js-pagination"
+                          style="display: flex; justify-content: center; align-items: center;"></span>
                       </div>
                       <br><br>
-                      <div id="remotes"
-                        style="display: flex; justify-content: flex-start; overflow-x: auto; flex-wrap: wrap;"></div>
+                      <div id="remotesContainer"
+                        style='display: flex; justify-content:space-between; align-items: center;'>
+                        <div id="remotes"
+                          style="display: flex; justify-content: flex-start; overflow-x: auto; flex-wrap: wrap;"></div>
+                      </div>
                     </div>
                   </div>
                   <!-- /.card -->

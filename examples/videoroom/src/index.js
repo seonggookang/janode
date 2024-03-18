@@ -848,7 +848,6 @@ function initFrontEnd() {
     const video_flag = queryData.video_flag; //video on or off
     res.render('index_videoff.html', {room_id: room_id, video_flag: video_flag});
   });
-
   
   app.get('/main', function(req, res) {
     console.log('########################');
@@ -859,16 +858,19 @@ function initFrontEnd() {
     const video_flag = queryData.video_flag; //video on or off
     res.render('index.html', {room_id: room_id, video_flag: video_flag});
   });
+
   app.get('/ske', function(req, res) {
     res.render('ske.html', {});
   });
+  
   app.get('/multi', function(req, res) {
     res.render('multi.html', {});
   });
 
   // New Multi
   app.get('/test', function(req, res) {
-    res.render('multi_pagination.html', {});
+    // res.render('multi_pagination.html', {}); // Made by Peter
+    res.render('multi.html', {});
     // res.render('multi_pagination_v1.html', {});
   });
 
