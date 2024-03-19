@@ -1,5 +1,6 @@
+/* eslint-disable multiline-comment-style */
 /* eslint-disable no-sparse-arrays */
-/* global io */
+/* global io $ connect disconnect create_room list_rooms*/
 
 'use strict';
 
@@ -168,9 +169,9 @@ const socket = io({
 // Functions for room actions
 // completely destroy target room
 function destroy_room(room, desc) {
-    if (confirm(desc + ' room을 삭제하겠습니까?')) {
-      _destroy({ room : room, permanent : false, secret : 'adminpwd' });
-    }
+  if (confirm(desc + ' room을 삭제하겠습니까?')) {
+    _destroy({ room : room, permanent : false, secret : 'adminpwd' });
+  }
 };
   
 // Join an hypothetical room: soon to be deleted
@@ -260,13 +261,12 @@ function trickle({ feed, candidate }) {
 function update(subscribe, unsubscribe) {
   let configureData = {}
   console.log("================ update =============");
-
   if (subscribe){
-    configureData.subscribe = subscribe
+    configureData.subscribe = subscribe;
   } 
 
   if (unsubscribe){
-    configureData.unsubscribe = unsubscribe
+    configureData.unsubscribe = unsubscribe;
   }
 
   const configId = getId();
@@ -803,7 +803,7 @@ socket.on('connect', () => {
   $('#disconnect, #create_room, #list_rooms' ).prop('disabled', false);
 
   //url 에 room_id 가 있으면 바로 
-  const room_id = $('#curr_room_name').attr('room_id');;
+  const room_id = $('#curr_room_name').attr('room_id');
   console.log('room_id = ', room_id);
   if (room_id != '') {
     join22(parseInt(room_id));
@@ -877,7 +877,7 @@ socket.on('joined', async ({ data }) => {
     subscribeTo(data.publishers, data.room);
 
     //url에 video_flag=off 이면 video를 끔
-    const video_flag = $('#curr_room_name').attr('video_flag');;
+    const video_flag = $('#curr_room_name').attr('video_flag');
     // console.log('video_flag = ', video_flag);
     
     // creating a custom variable to set video to ON and OFF. not relevant now
@@ -1056,6 +1056,8 @@ socket.on('leaving', ({ data }) => {
     closePC(data.feed);
     renderPage(currentPage);
     renderButton(currentPage)
+
+
   }
   _listRooms();
 });
@@ -1271,7 +1273,7 @@ async function doAnswer(feed, display, offer) {
       }
     };
     pc.ontrack = event => {
-      console.log('pc.ontrack', event);
+      console.log('pc.ontrack', event); // streams 가 1개만 있음. 그래서 안나오는 중.
 
       event.track.onunmute = evt => {
         console.log('track.onunmute', evt);	
@@ -1286,11 +1288,13 @@ async function doAnswer(feed, display, offer) {
       console.log("==========doAnswer after ice setting event details=========", event)
 
       const remoteStream = event.streams[0];
+
       console.log("==========doAnswer after ice setting remoteStream=========", remoteStream)
       console.log("======= moving to setremotevideoelement=======")
 
 
       setRemoteVideoElement(remoteStream, feed, display);
+
     };
 
     console.log("========doAnswer add the feed and pc to the pcmap the feed=======", (feed))
@@ -1335,20 +1339,20 @@ function setLocalVideoElement(localStream, feed, display, room) {
     nameElem.innerHTML = display + ' (' + feed + ')';
     nameElem.style.display = 'table';
 
-     // Create a video element for the local stream
-     const localVideoStreamElem = document.createElement('video');
-     localVideoStreamElem.width = 320;
-     localVideoStreamElem.height = 240;
-     localVideoStreamElem.autoplay = true;
-     localVideoStreamElem.muted = 'muted'; // Mute the local video
-     localVideoStreamElem.style.cssText = '-moz-transform: scale(-1, 1); -webkit-transform: scale(-1, 1); -o-transform: scale(-1, 1); transform: scale(-1, 1); filter: FlipH;';
-     localVideoStreamElem.id = feed;
+    // Create a video element for the local stream
+    const localVideoStreamElem = document.createElement('video');
+    localVideoStreamElem.width = 320;
+    localVideoStreamElem.height = 240;
+    localVideoStreamElem.autoplay = true;
+    localVideoStreamElem.muted = 'muted'; // Mute the local video
+    localVideoStreamElem.style.cssText = '-moz-transform: scale(-1, 1); -webkit-transform: scale(-1, 1); -o-transform: scale(-1, 1); transform: scale(-1, 1); filter: FlipH;';
+    localVideoStreamElem.id = feed;
 
-     // Create an image for no video
-     const noImageElem = document.createElement('img')
-     noImageElem.src = '/images/blank_person.png'
-     noImageElem.width = 320;
-     noImageElem.height = 240;
+    // Create an image for no video
+    const noImageElem = document.createElement('img')
+    noImageElem.src = '/images/sydney.png'
+    noImageElem.width = 320;
+    noImageElem.height = 240;
 
     // If the localStream is provided, create a the video element and set the localstream as the source for the video element 
     if (localStream) {
@@ -1372,16 +1376,16 @@ function setLocalVideoElement(localStream, feed, display, room) {
       noImageElem.style.display = 'none'; 
     }    
 
-      // Create a container div for the local video (without video element)
-      // **** the create container div could have been moved out of the if statement
-      const localVideoContainer = document.createElement('div')
-      localVideoContainer.id = 'video_' + feed
-      localVideoContainer.appendChild(nameElem)
-      localVideoContainer.appendChild(localVideoStreamElem);
-      localVideoContainer.appendChild(noImageElem)
+    // Create a container div for the local video (without video element)
+    // **** the create container div could have been moved out of the if statement
+    const localVideoContainer = document.createElement('div')
+    localVideoContainer.id = 'video_' + feed
+    localVideoContainer.appendChild(nameElem)
+    localVideoContainer.appendChild(localVideoStreamElem);
+    localVideoContainer.appendChild(noImageElem)
 
-      // Append the container to the 'locals' element in the HTML
-      document.getElementById('locals').appendChild(localVideoContainer)
+    // Append the container to the 'locals' element in the HTML
+    document.getElementById('locals').appendChild(localVideoContainer)
     
   }
   else {
@@ -1391,7 +1395,7 @@ function setLocalVideoElement(localStream, feed, display, room) {
 
     // Create an image for no video
     const noImageElem = document.createElement('img')
-    noImageElem.src = '/images/blank_person.png'
+    noImageElem.src = '/images/sydney.png'
     noImageElem.width = 320;
     noImageElem.height = 240;
 
@@ -1553,19 +1557,20 @@ function renderButton(pageNumber){
 
 // Function to set the remote video element
 function setRemoteVideoElement(remoteStream, feed, display, talking=null) {
-
+  // 여기서 최초로 remotepeer가 입장했을 때 currentPage가 1인 곳에 들어오게 되면 _subscribeUpdate(feed)가 바로 실행되고싶다.
   // If no feed exists just exit
-  if (!feed) return;
 
+
+  if (!feed) return;
+  
   // Check if the remote video element with the given feed ID already exists
   if (!document.getElementById('video_' + feed)) {
+    
 
     console.log('===========inside remoteElement, feed element doesnt exist========')
     // Create a new span element to display the user's name and feed ID
     const nameElem = document.createElement('span');
-    // const onlyAudio_btn = "<button onclick='_restartSubscriberAudio("+feed+");' class='btn btn-primary btn-xs' style='margin-left:2px;'>Audio Only</button>";
     const onlyAudio_btn = "<button onclick='_unsubscribeUpdate("+feed+");' class='btn btn-primary btn-xs' style='margin-left:2px;'>Audio Only</button>";
-    // const audioVideo_btn = "<button onclick='_restartSubscriberAudioVideo("+feed+");' class='btn btn-primary btn-xs' style='margin-left:2px;'>Audio Video</button>";
     const audioVideo_btn = "<button onclick='_subscribeUpdate("+feed+");' class='btn btn-primary btn-xs' style='margin-left:2px;'>Audio Video</button>";
     nameElem.innerHTML = display + ' (' + feed + ')' + onlyAudio_btn + audioVideo_btn;
     nameElem.style.display = 'table';
@@ -1575,19 +1580,19 @@ function setRemoteVideoElement(remoteStream, feed, display, talking=null) {
     remoteVideoStreamElem.width = 320;
     remoteVideoStreamElem.height = 240;
     remoteVideoStreamElem.autoplay = true;
+    remoteVideoStreamElem.style.cssText = '-moz-transform: scale(-1, 1); -webkit-transform: scale(-1, 1); -o-transform: scale(-1, 1); transform: scale(-1, 1); filter: FlipH;';
     remoteVideoStreamElem.setAttribute('feed', feed);
     remoteVideoStreamElem.id = feed;
-    
+
     // Create an image for no video
     const noImageElem = document.createElement('img')
     noImageElem.src = '/images/blank_person.png'
     noImageElem.width = 320;
     noImageElem.height = 240;
+
     noImageElem.id = `photo_${feed}`
 
-    // Aply CSS transformations for mirroring the video horizontally
-    remoteVideoStreamElem.style.cssText = '-moz-transform: scale(-1, 1); -webkit-transform: scale(-1, 1); -o-transform: scale(-1, 1); transform: scale(-1, 1); filter: FlipH;';
-    
+
     // If the remoteStream is provided, set it as the source for the video element
     if (remoteStream){
       remoteVideoStreamElem.srcObject = remoteStream;
@@ -1606,6 +1611,7 @@ function setRemoteVideoElement(remoteStream, feed, display, talking=null) {
       }
     } else{
       console.log('=========no pic========')
+
       noImageElem.style.display = 'none';
       // remoteVideoStreamElem.style.display = 'none'
     }
@@ -1620,13 +1626,34 @@ function setRemoteVideoElement(remoteStream, feed, display, talking=null) {
     // Append the container to the 'remotes' element in the HTML
     document.getElementById('remotes').appendChild(remoteVideoContainer);
 
+
     renderButton(currentPage)
     renderPage(currentPage)
   }
 
+    const paginationContainer = document.getElementById('js-pagination');
+    
+    paginationContainer.innerHTML = '';   
+    
+    const totalItems = remoteContainers.length;
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+    for (let i = 1; i <= totalPages; i++) {
+      const pageButton = document.createElement('button');
+      pageButton.textContent = i;
+      pageButton.className = 'pagination-button';
+      
+      if(i === currentPage) {
+        pageButton.classList.add('clicked');
+      } 
+      
+      paginationContainer.appendChild(pageButton);       
+    }
+    
+  }
+  
   // If the video element already exists, update its properties
   else {
-
     console.log('===========inside remoteElement, feed element exist========')
     // Get the video container by its feed
     const remoteVideoContainer = document.getElementById('video_' + feed);
@@ -1638,9 +1665,7 @@ function setRemoteVideoElement(remoteStream, feed, display, talking=null) {
 
     if (display) {
       const nameElem = remoteVideoContainer.getElementsByTagName('span')[0];
-       // const onlyAudio_btn = "<button onclick='_restartSubscriberAudio("+feed+");' class='btn btn-primary btn-xs' style='margin-left:2px;'>Audio Only</button>";
       const onlyAudio_btn = "<button onclick='_unsubscribeUpdate("+feed+");' class='btn btn-primary btn-xs' style='margin-left:2px;'>Audio Only</button>";
-      // const audioVideo_btn = "<button onclick='_restartSubscriberAudioVideo("+feed+");' class='btn btn-primary btn-xs' style='margin-left:2px;'>Audio Video</button>";
       const audioVideo_btn = "<button onclick='_subscribeUpdate("+feed+");' class='btn btn-primary btn-xs' style='margin-left:2px;'>Audio Video</button>";
       nameElem.innerHTML = display + ' (' + feed + ')' + onlyAudio_btn + audioVideo_btn;
     }
@@ -1652,9 +1677,10 @@ function setRemoteVideoElement(remoteStream, feed, display, talking=null) {
       remoteVideoStreamElem.srcObject = remoteStream;
 
       // const audioTracks = remoteStream.getAudioTracks()
-      const videoTracks = remoteStream.getVideoTracks()
+      const videoTracks = remoteStream.getVideoTracks();
 
       if (videoTracks.length === 0){
+
         console.log('=========no video, only pic========')
         remoteVideoStreamElem.style.display = 'none'
         noImageElem.style.display = 'block';
@@ -1667,14 +1693,15 @@ function setRemoteVideoElement(remoteStream, feed, display, talking=null) {
       console.log('=========no pic========')
       // noImageElem.style.display = 'block';
       // remoteVideoStreamElem.style.display = 'none'
+
     }
 
     if (talking == true){
-      console.log("=====talking is true=======")
+      console.log('=====talking is true=======');
       remoteVideoContainer.classList.add('border', 'border-danger');
 
     } else if (talking == false){
-      console.log("=====talking is false=======")
+      console.log('=====talking is false=======');
       remoteVideoContainer.classList.remove('border', 'border-danger');
     }
   }
@@ -1758,6 +1785,3 @@ function getDateTime() {
   var date_time = date + ' ' + time;  
   return date_time;
 }
-
-// Initial load of video chat with first page
-// renderPage(1);

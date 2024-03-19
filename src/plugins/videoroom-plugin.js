@@ -824,6 +824,7 @@ class VideoRoomHandle extends Handle {
       ptype: PTYPE_LISTENER,
       room,
       streams,
+
     };
     if (Array.isArray(streams)) body.streams = streams;
     if (typeof audio === 'boolean') body.audio = audio;
