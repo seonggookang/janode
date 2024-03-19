@@ -17,7 +17,7 @@ const LOG_NS = `[${basename(__filename)}]`;
 import VideoRoomPlugin from '../../../src/plugins/videoroom-plugin.js';
 
 import express from 'express';
-import ejs from 'ejs';
+import ejs from "ejs";
 
 const app = express();
 const options = {
@@ -127,6 +127,8 @@ function initFrontEnd() {
 
     const clientHandles = (function () {
       let handles = [];
+      console.log('the available handles are:')
+      console.log(handles)
 
       return {
         insertHandle: handle => {
@@ -136,6 +138,11 @@ function initFrontEnd() {
           return handles.find(h => h.feed === feed);
         },
 
+        getHandleByStream: feed => {
+          console.log('===========Printing out the streams=========', handles)
+          return handles.find(h => h.streams === feed);
+        },
+
         removeHandle: handle => {
           handles = handles.filter(h => h.id !== handle.id);
         },
@@ -143,6 +150,7 @@ function initFrontEnd() {
           handles = handles.filter(h => h.feed !== feed);
         },
         leaveAll: () => {
+          console.log(handles)
           const leaves = handles.map(h => h.leave().catch(() => { }));
           return Promise.all(leaves);
         },
@@ -194,7 +202,11 @@ function initFrontEnd() {
     socket.on('join', async (evtdata = {}) => {
       Logger.info(`${LOG_NS} ${remote} join received`);
       const { _id, data: joindata = {} } = evtdata;
-            
+      console.log('The new user joined the room')
+      console.log(evtdata)
+      console.log(evtdata.data)
+
+      console.log("=========Join handle information===========", clientHandles.getAllHandles())
 
       if (!checkSessions(janodeSession, true, socket, evtdata)) return;
 
@@ -273,8 +285,7 @@ function initFrontEnd() {
     socket.on('subscribe', async (evtdata = {}) => {
       console.log("===== subscribe ====", 'To whom=', evtdata);
       Logger.info(`${LOG_NS} ${remote} subscribe received as below`);
-      // console.log(evtdata);
-
+      
       // Extract necessary data from the event payload
       const { _id, data: joindata = {} } = evtdata;
 
@@ -301,7 +312,6 @@ function initFrontEnd() {
         });
         subHandle.on(Janode.EVENT.HANDLE_TRICKLE, evtdata => Logger.info(`${LOG_NS} ${subHandle.name} trickle event ${JSON.stringify(evtdata)}`));
 
-
         // Set up specific event listeners for VideoRoomPlugin events
         subHandle.on(VideoRoomPlugin.EVENT.VIDEOROOM_SC_SUBSTREAM_LAYER, evtdata => Logger.info(`${LOG_NS} ${subHandle.name} simulcast substream layer switched to ${evtdata.sc_substream_layer}`));
         subHandle.on(VideoRoomPlugin.EVENT.VIDEOROOM_SC_TEMPORAL_LAYERS, evtdata => Logger.info(`${LOG_NS} ${subHandle.name} simulcast temporal layers switched to ${evtdata.sc_temporal_layers}`));
@@ -323,12 +333,9 @@ function initFrontEnd() {
 
     socket.on('publish', async (evtdata = {}) => {
       Logger.info(`${LOG_NS} ${remote} publish received`);
-      // console.log(evtdata);
       const { _id, data: pubdata = {} } = evtdata;
 
       const handle = clientHandles.getHandleByFeed(pubdata.feed);
-      // console.log("===== publish handle ====", pubdata.feed);
-      // console.log(handle);
       if (!checkSessions(janodeSession, handle, socket, evtdata)) return;
 
       try {
@@ -342,17 +349,32 @@ function initFrontEnd() {
 
     socket.on('configure', async (evtdata = {}) => {
       Logger.info(`${LOG_NS} ${remote} configure received as below`);
+      // console.log(evtdata);
       const { _id, just_configure, data: confdata = {} } = evtdata;
 
       try {
+        console.log("===== configure handle ====", confdata.feed, just_configure);
+
+        // Retrieve the Janode Handle associated with the specified feed
         const handle = clientHandles.getHandleByFeed(confdata.feed);
+
+        // Check and Validate sessions
         if (!checkSessions(janodeSession, handle, socket, evtdata)) return;
-          const response = await handle.configure(confdata)
+        
+        // Configure the handle with the provided configuration data
+          const response = await handle.configure(confdata);
+
+          console.log("======configure handle response from server======", response)
+
+        // Remove the 'configured' key from the response and add 'just_configure' flag
           delete response.configured;
           response.just_configure = just_configure;
+
+          // Reply with the 'configured' event and the modified response
           replyEvent(socket, 'configured', response, _id);
           Logger.info(`${LOG_NS} ${remote} configured sent as above`);
       } catch ({ message }) {
+        // Handle errors during the configuration
         console.log('configure error....');
         replyError(socket, message, confdata, _id);
       }
@@ -370,11 +392,23 @@ function initFrontEnd() {
         } else if (confdata.unsubscribe){
           handle = clientHandles.getHandleByFeed(confdata.unsubscribe[0].feed);
         } else{
+          console.log('=========Invalid update data(no data)=========')
           return;
         }
         
+        // Check and Validate sessions
         if (!checkSessions(janodeSession, handle, socket, evtdata)) return;
-          const response = await handle.update(confdata);
+        
+        // Configure the handle with the provided configuration data
+        const response = await handle.update(confdata);
+
+        console.log("======Inside update, update handle response from server======", response)
+
+        // Exit if the stream is undefined. This is because stream does not exist
+        if (!response || typeof response.streams === 'undefined'){
+          console.log("======the streams from the response is undefined, stream does not exist======")
+          return; 
+        } 
           replyEvent(socket, 'updated', response, _id);
           Logger.info(`${LOG_NS} ${remote} configured sent as above`);
       } catch ({ message }) {
@@ -405,6 +439,8 @@ function initFrontEnd() {
     socket.on('leave', async (evtdata = {}) => {
       Logger.info(`${LOG_NS} ${remote} leave received`);
       const { _id, data: leavedata = {} } = evtdata;
+      console.log('A leave requested has been received by the server. The received are:')
+      
       const handle = clientHandles.getHandleByFeed(leavedata.feed);
 
       try {
@@ -421,6 +457,11 @@ function initFrontEnd() {
       // 여기는 룸을 나가는 본인에게만 발생한다.
       // 나머지 클라이언트는 leaving 이벤트가 발생한다.
       Logger.info(`${LOG_NS} ${remote} leaveAll received ${evtdata}`);
+      console.log('=============LEAVEALL=============');
+      console.log(evtdata.data);
+      console.log(evtdata);
+      // console.log(_id);
+      // console.log(leavedata);
       current_leaving_display = evtdata.data.display;
       await clientHandles.leaveAll();
       await clientHandles.detachAll();
@@ -430,13 +471,15 @@ function initFrontEnd() {
 
     socket.on('start', async (evtdata = {}) => {
       Logger.info(`${LOG_NS} ${remote} start received as below`);
-      // console.log(evtdata);
+    
       const { _id, data: startdata = {} } = evtdata;
       const handle = clientHandles.getHandleByFeed(startdata.feed);
-    
+      
+      console.log("===== start handle ====", 'To whom=', startdata.feed);
       if (!checkSessions(janodeSession, handle, socket, evtdata)) return;
 
       try {
+       
         const response = await handle.start(startdata);
         replyEvent(socket, 'started', response, _id);
         Logger.info(`${LOG_NS} ${remote} started sent as above`);
@@ -514,7 +557,6 @@ function initFrontEnd() {
       await clientHandles.detachAll();
     });
 
-
     /*----------------*/
     /* Management API */
     /*----------------*/
@@ -569,15 +611,24 @@ function initFrontEnd() {
     });
 
     socket.on('list-rooms', async (evtdata = {}) => {
+      console.log('=========== list-rooms ===================AnoptaCode');
       Logger.info(`${LOG_NS} ${remote} list-rooms received as below`);
       console.log(evtdata);
       const { _id, data: listdata = {} } = evtdata;
 
+      console.log("=========listRooms=========", evtdata)
+
       if (!checkSessions(janodeSession, janodeManagerHandle, socket, evtdata)) return;
+
       try {
         const response = await janodeManagerHandle.list();
         try {
+          // console.log("====================");
+          // console.log(response);
           var simple_response = JSON.stringify(response.list);
+          // console.log(simple_response);
+
+          console.log("=========listRooms========= response from server", simple_response)
         } catch ({ message }) {
           console.log(message);
         }
@@ -591,14 +642,18 @@ function initFrontEnd() {
     socket.on('create', async (evtdata = {}) => {
       Logger.info(`${LOG_NS} ${remote} create received`);
       const { _id, data: createdata = {} } = evtdata;
+      console.log(createdata);
 
       if (!checkSessions(janodeSession, janodeManagerHandle, socket, evtdata)) return;
 
       // 같은 이름의 방이 있는지 확인
       try {
         const response = await janodeManagerHandle.list();
-        
+        // console.log("====================");
+        // console.log(response);
+
         if (hasDuplicate(createdata.description, response['list'], "description")) {
+          // console.log(isDuplicate);
           replyEvent(socket, 'created', {room : -1, permanent: false, message : message}, _id);
           return;
   
@@ -621,6 +676,9 @@ function initFrontEnd() {
         console.log({room : -1, permanent: false, message : message});
         replyEvent(socket, 'created', {room : -1, permanent: false, message : message}, _id);
         Logger.info(`${LOG_NS} ${remote} error created sent`);
+
+        // error 발생 시, 아래 대신에 replyEvent() 로 대체 함
+        // replyError(socket, message, createdata, _id);
       }
     });
 
@@ -790,7 +848,6 @@ function initFrontEnd() {
     const video_flag = queryData.video_flag; //video on or off
     res.render('index_videoff.html', {room_id: room_id, video_flag: video_flag});
   });
-
   
   app.get('/main', function(req, res) {
     console.log('########################');
@@ -801,16 +858,20 @@ function initFrontEnd() {
     const video_flag = queryData.video_flag; //video on or off
     res.render('index.html', {room_id: room_id, video_flag: video_flag});
   });
+
   app.get('/ske', function(req, res) {
     res.render('ske.html', {});
   });
+  
   app.get('/multi', function(req, res) {
+    // res.render('multi.html', {});
     res.render('multi.html', {});
   });
 
   // New Multi
   app.get('/test', function(req, res) {
-    res.render('multi_pagination.html', {});
+    // res.render('multi_pagination.html', {}); // Made by Peter
+    res.render('multi.html', {});
     // res.render('multi_pagination_v1.html', {});
   });
 

@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>YMX | MXRTC</title>
+
+  <!-- Google Font: Source Sans Pro -->
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="/AdminLTE/plugins/fontawesome-free/css/all.min.css">
+  <!-- Theme style -->
+  <link rel="stylesheet" href="/AdminLTE/dist/css/adminlte.min.css">
+  <style>
+    .btn_between {
+      justify-content: space-between;
+      margin-right: 0px;
+    }
+
+    .border-talking {
+      border: 3px solid red
+    }
+
+    .localBlankPerson {
+      width: 160px;
+      height: 120px;
+      object-fit: cover;
+      content: url("/img/blank_person.png");
+      display: none;
+    }
+
+    .video-view .video {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      /* background-color: #ccc; */
+    }
+
+    .video-view .audioOn {
+      position: absolute;
+      bottom: 0px;
+      left: 0px;
+      cursor: pointer;
+      width: 30%;
+      content: url("/img/ui_btn_audioOn.png");
+      /* display: none; */
+    }
+
+    .video-view .audioOff {
+      position: absolute;
+      bottom: 0px;
+      left: 0px;
+      cursor: pointer;
+      width: 30%;
+      content: url("/img/ui_btn_audioOff.png");
+    }
+
+    .video-view .videoOn {
+      position: absolute;
+      bottom: 0px;
+      right: 0px;
+      cursor: pointer;
+      width: 30%;
+      content: url("/img/ui_btn_videoOn.png");
+      /* display: none; */
+    }
+
+    .video-view .videoOff {
+      position: absolute;
+      bottom: 0px;
+      right: 0px;
+      cursor: pointer;
+      width: 30%;
+      content: url("/img/ui_btn_videoOff.png");
+    }
+
+    .pagination-button {
+      width: 50px;
+      height: 50px;
+      text-align: center;
+      background-color: rgb(255, 255, 255);
+      margin: 10px;
+      padding: 10px 15px;
+      font-size: 20px;
+      font-weight: bold;
+      border-radius: 8px;
+      line-height: 33px;
+    }
+
+
+    .pagination-button:hover {
+      background-color: rgb(156, 156, 156);
+    }
+
+    .pagination-button.clicked {
+      color: black;
+      background-color: rgb(255, 23, 23);
+    }
+
+
+
+    @keyframes fadeInBlack {
+      from {
+        color: red;
+      }
+
+      to {
+        color: black;
+      }
+    }
+
+    .fadeInBlack {
+      animation: fadeInBlack 0.5s ease forwards;
+    }
+
+    /*   밑에는 새로 추가한 css */
+    #currentPage {
+      font-size: 20px;
+      margin-right: auto;
+      margin: 0 5px 0 0;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .border-talking {
+      border: 3px solid red
+    }
+
+
+    .pagination-button>span {
+      font-size: 24px;
+    }
+
+    #prevPage,
+    #nextPage {
+      font-size: 37px;
+    }
+
+    #prevPage:hover,
+    #nextPage:hover {
+      box-shadow: 0px 0px 5px 0px rgba(0, 0, 0, 0.5);
+      background-color: red;
+    }
+  </style>
+</head>
+
+<body class="dark-mode1" style="background-color: #d1d1d1;">
+  <!-- Site wrapper -->
+  <div class="wrapper">
+    <!-- Content Wrapper. Contains page content -->
+    <div class="">
+
+
+      <!-- Main content -->
+      <section class="content">
+        <div class="container-fluid">
+          <div class="row">
+            <div class="col-12">
+              <!-- Default box -->
+              <div class="card" style="background-color: #999999;">
+                <div class="col-12">
+                  <div class="row" style="display:none;">
+                    <div clas="col-6" style="padding: 5px 5px; width: 50%;  border:1px solid #999;">
+                      <div style="display: flex; padding-top: 5px;">
+                        <button id="connect" type="button" class="btn btn-primary btn-xs btn_between">Connect</button>
+                        <button id="disconnect" type="button"
+                          class="btn btn-primary btn-xs btn_between">Disconnect</button>
+                        <div class=" btn_between">
+                          <input type="text" class="form-control input-sm" disabled id="connect_status"
+                            value="disconnected">
+                        </div>
+                      </div>
+                      <div style="display: flex; padding-top: 5px;">
+                        <div class=" btn_between">
+                          <div>참석할 이름</div>
+                        </div>
+                        <div class=" btn_between">
+                          <input type="text" class="form-control input-sm" id="display_name" placeholder="참석할 이름">
+                        </div>
+                      </div>
+                      <div style="display: flex; padding-top: 5px;">
+                        <div class=" btn_between">
+                          <div>비디오 프레임</div>
+                        </div>
+                        <div class=" btn_between">
+                          <input type="text" class="form-control input-sm" id="frame_rate" value="15"
+                            style="width:60px">
+                        </div>
+                      </div>
+                      <div style="display: flex; padding-top: 5px;">
+                        <div class=" btn_between">
+                          <div>현재 방이름</div>
+                        </div>
+                        <div class=" btn_between">
+                          <input type="text" class="form-control input-sm" id="curr_room_name">
+                        </div>
+
+                        <!-- <button id="join2" type="button"  class="btn btn-primary btn-xs btn_between">join</button> -->
+                        <button id="leave_all" type="button"
+                          class="btn btn-primary btn-xs btn_between left_status">leaveAll</button>
+                      </div>
+                      <div style="display: flex; padding-top: 5px;">
+                        <div class=" btn_between">
+                          <input id="new_room_name" class="form-control input-sm" type="text"
+                            placeholder="new room name">
+                        </div>
+                        <button id="create_room" type="button"
+                          class="btn btn-primary btn-xs btn_between">create_room</button>
+                        <div></div>
+                      </div>
+                    </div>
+                    <div clas="col-6" style="padding: 5px 5px; width: 50%; border:1px solid #999;">
+                      <button id="list_rooms" type="button"
+                        class="btn btn-primary btn-xs btn_between">list_rooms</button>
+                      <button id="get_room_id" type="button"
+                        class="btn btn-primary btn-xs btn_between">get_room_id</button>
+                      <div style="font-size: 0.6em;">room이름(현재 참가자수/최대 참가자수)</div>
+                      <div id="room_list" class=" btn_between"></div>
+                    </div>
+                  </div>
+                  <!-- <br><br> -->
+                  <div id="videos" style="display: flex; ">
+                    <!-- <span style="font-size: 16px;"> -- LOCALS -- </span> -->
+                    <!-- <br><br> -->
+                    <!-- <div style="border: 2px; border-color: blueviolet;">
+                    <div id="locals" style=""></div>
+                    <div>
+                      <button id="unpublish" class="btn btn-primary btn-xs btn_between">Unpublish</button>
+                      <button id="audioset" onclick="configure_bitrate_audio_video('audio');" class="btn btn-primary btn-xs btn_between">Audio</button>
+                      <button id="videoset" onclick="configure_bitrate_audio_video('video');" class="btn btn-primary btn-xs btn_between">Video</button>
+                      <div class="btn-group btn-group-xs">
+                        <button id="bitrateset" autocomplete="off" class="btn btn-primary btn-xs btn_between dropdown-toggle" data-toggle="dropdown">
+                          <span id="Bandwidth_label">128K</span><span class="caret"></span>
+                        </button>
+                        <ul id="bitrate" class="dropdown-menu" role="menu">
+                          <li><a href="#" id="0" onclick="configure_bitrate_audio_video('bitrate', 0);">No limit</a></li>
+                          <li><a href="#" id="32" onclick="configure_bitrate_audio_video('bitrate',32000);">Cap to 32kbit</a></li>
+                          <li><a href="#" id="64" onclick="configure_bitrate_audio_video('bitrate',64000);">Cap to 64kbit</a></li>
+                          <li><a href="#" id="128" onclick="configure_bitrate_audio_video('bitrate',128000);">Cap to 128kbit</a></li>
+                          <li><a href="#" id="256" onclick="configure_bitrate_audio_video('bitrate', 256000);">Cap to 256kbit</a></li>
+                          <li><a href="#" id="512" onclick="configure_bitrate_audio_video('bitrate', 512000);">Cap to 512kbit</a></li>
+                          <li><a href="#" id="1024" onclick="configure_bitrate_audio_video('bitrate', 1024000);">Cap to 1mbit</a></li>
+                          <li><a href="#" id="1500" onclick="configure_bitrate_audio_video('bitrate', 1500000);">Cap to 1.5mbit</a></li>
+                          <li><a href="#" id="2000" onclick="configure_bitrate_audio_video('bitrate', 2000000);">Cap to 2mbit</a></li>
+                        </ul>
+                      </div>
+                    </div> -->
+                    <div id="local_info" style="display:none">
+                      local_feed: <div id="local_feed" style="display: flex;"></div>
+                      private_id: <div id="private_id" style="display: flex;"></div>
+                    </div>
+                  </div>
+                  <div id="remotes" style="display: flex; justify-content: safe; overflow-x: auto;">
+                    <div style="border: 2px; border-color: blueviolet;">
+                      <div id="local2" style="padding: 0 5px 0 5px;"></div>
+                      <div id="local2_buttons" style="text-align: center; display:none;">
+                        <button id="unpublish" style="display:none;"
+                          class="btn btn-primary btn-xs btn_between">Unpublish</button>
+                        <button id="audioset" style="display:none;" onclick="configure_bitrate_audio_video('audio');"
+                          class="btn btn-primary btn-xs btn_between">Audio</button>
+                        <button id="videoset" style="display:none;" onclick="configure_bitrate_audio_video('video');"
+                          class="btn btn-primary btn-xs btn_between">Video</button>
+                        <div class="btn-group btn-group-xs" style="display:none;">
+                          <button id="bitrateset" autocomplete="off"
+                            class="btn btn-primary btn-xs btn_between dropdown-toggle" data-toggle="dropdown">
+                            <span id="Bandwidth_label">128K</span><span class="caret"></span>
+                          </button>
+                          <ul id="bitrate" class="dropdown-menu" role="menu">
+                            <li><a href="#" id="0" onclick="configure_bitrate_audio_video('bitrate', 0);">No limit</a>
+                            </li>
+                            <li><a href="#" id="32" onclick="configure_bitrate_audio_video('bitrate',32000);">Cap to
+                                32kbit</a></li>
+                            <li><a href="#" id="64" onclick="configure_bitrate_audio_video('bitrate',64000);">Cap to
+                                64kbit</a></li>
+                            <li><a href="#" id="128" onclick="configure_bitrate_audio_video('bitrate',128000);">Cap to
+                                128kbit</a></li>
+                            <li><a href="#" id="256" onclick="configure_bitrate_audio_video('bitrate', 256000);">Cap to
+                                256kbit</a></li>
+                            <li><a href="#" id="512" onclick="configure_bitrate_audio_video('bitrate', 512000);">Cap to
+                                512kbit</a></li>
+                            <li><a href="#" id="1024" onclick="configure_bitrate_audio_video('bitrate', 1024000);">Cap
+                                to 1mbit</a></li>
+                            <li><a href="#" id="1500" onclick="configure_bitrate_audio_video('bitrate', 1500000);">Cap
+                                to 1.5mbit</a></li>
+                            <li><a href="#" id="2000" onclick="configure_bitrate_audio_video('bitrate', 2000000);">Cap
+                                to 2mbit</a></li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div style='display: flex; align-items: center;'>
+                    <div id='participants'></div>
+                    <div id="js-pagination" style='display: flex; '></div>
+                  </div>
+                  <div id="remotesContainer"
+                    style='display: flex; justify-content: flex-start; align-items: center; position: relative;'>
+                    <div id="remotesMulti"
+                      style="display: flex; justify-content: safe; overflow-x: auto; flex-wrap: wrap;"> </div>
+                  </div>
+                  <div id="screen" style="text-align: center;"></div>
+                </div>
+
+                <!-- /.card -->
+              </div>
+            </div>
+          </div>
+      </section>
+      <!-- /.content -->
+    </div>
+    <!-- /.content-wrapper -->
+
+    <!-- <footer class="main-footer" style="margin-left: 0;">
+    <div class="float-right d-none d-sm-block">
+      <b>Version</b> 1.0
+    </div>
+    <strong>Copyright &copy; 2023 <a href="#">YMX</a>.</strong> All rights reserved.
+  </footer> -->
+
+    <!-- Control Sidebar -->
+    <aside class="control-sidebar control-sidebar-dark">
+      <!-- Control sidebar content goes here -->
+    </aside>
+    <!-- /.control-sidebar -->
+
+
+  </div>
+  <!-- ./wrapper -->
+
+  <!-- jQuery -->
+  <script src="/AdminLTE/plugins/jquery/jquery.min.js"></script>
+  <!-- Bootstrap 4 -->
+  <script src="/AdminLTE/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <!-- AdminLTE App -->
+  <script src="/AdminLTE/dist/js/adminlte.min.js"></script>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script> -->
+  <!-- <script src="/multi_pagination.js"></script> -->
+  <script src="/videoroom-client-multi_pagination.js"></script>
+
+  <script>
+
+    function mesh() {
+      location.href = '/1';
+    };
+
+    function mcu() {
+      alert('준비 중입니다.');
+    };
+
+    function sfu() {
+      alert('준비 중입니다.');
+    };
+
+    $('#disconnect, #create_room, #list_rooms, #leave_all').prop('disabled', true);
+    var randomNumber2 = Math.floor(Math.random() * 1e5).toString().padStart(5, '0');
+    $('#display_name').val(parseInt(randomNumber2)); //'TEST_'+
+
+    if (socket.connected) {
+      alert('already connected!');
+    } else {
+      socket.connect();
+      //get room id
+      // getRoomId('skeRoom');
+      //get display_name
+      // join({room: room, display:display_name, token:null});
+
+    }
+
+  </script>
+</body>
+
+</html>

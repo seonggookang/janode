@@ -1,33 +1,28 @@
-/* eslint-disable multiline-comment-style */
 /* eslint-disable no-sparse-arrays */
-/* global io $ connect disconnect create_room list_rooms*/
+/* global io */
 
 'use strict';
 
-// Set up RTCPeerConnection object
 const RTCPeerConnection = (window.RTCPeerConnection || window.webkitRTCPeerConnection || window.mozRTCPeerConnection).bind(window);
 
-
-// Map keeps track of RTCPeerConnection objects associated with different feeds
 const pcMap = new Map();
 let pendingOfferMap = new Map();
 var myRoom = getURLParameter('room') ? parseInt(getURLParameter('room')) : (getURLParameter('room_str') || 1234);
 const randName = ('John_Doe_' + Math.floor(10000 * Math.random()));
 const myName = getURLParameter('name') || randName;
 
-// Event Handlings
-// Variable initiation
 const button = document.getElementById('button');
 var localStream;
 var frameRate;
-var audioSet = false;
+var audioSet = true;
 var videoSet = true;
 var local_pc;
 var local_audio_sender;
 var local_video_sender;
 var local_feed;
 var local_display;
-
+var local_audio_onoff = true;
+var local_video_onoff = true;
 
 // Initial the current page and the number of items per page
 const itemsPerPage = window.innerWidth > 600 ? 2 : 1;
@@ -36,8 +31,6 @@ let currentPage = 1;
 let subscribeList = []
 let unSubscribeList = []
 
-
-// On connect event
 connect.onclick = () => {
   if (socket.connected) {
     alert('already connected!');
@@ -46,8 +39,6 @@ connect.onclick = () => {
     socket.connect();
   }
 };
-
-// On disconnect event
 disconnect.onclick = () => {
   if (!socket.connected) {
     alert('already disconnected!');
@@ -56,8 +47,6 @@ disconnect.onclick = () => {
     socket.disconnect();
   }
 };
-
-// Create a new room
 create_room.onclick = () => {
   if ($('#new_room_name').val() == '') alert('생성할 방이름을 입력해야 합니다.');
   else _create({ 
@@ -66,39 +55,35 @@ create_room.onclick = () => {
     max_publishers : 100, 
     audiocodec : 'opus', 
     videocodec : 'vp8', 
-    talking_events : true, 
-    talking_level_threshold : 50, 
-    talking_packets_threshold : 50, 
+    talking_events : false, 
+    talking_level_threshold : 25, 
+    talking_packets_threshold : 100, 
     permanent : false,
-    bitrate: 128000,
+    bitrate: 512000,
     secret: 'adminpwd' });
 };
 list_rooms.onclick = () => {
   _listRooms();
 };
+get_room_id.onclick = () => {
+  getRoomId('Demo 1234');
+};
 
+// join2.onclick = () => {
+//   alert('join');
+//   join();
+// };
 
-// Leave all available rooms
 leave_all.onclick = () => {
   let evtdata = {
     data: {feed: $('#local_feed').text()},
   }
   console.log(evtdata);
   if ($('#local_feed').text() == '') return;
-  else _leaveAll({feed: $('#local_feed').text(), display: $('#display_name').val()});
+  // else _leave({feed: parseInt($('#local_feed').text()), display: $('#myInput').val()});
+  else _leaveAll({feed: $('#local_feed').text(), display: $('#myInput').val()});
 };
 
-// Leave the target room
-leave.onclick = () => {
-  let evtdata = {
-    data: {feed: $('#local_feed').text()},
-  }
-  console.log(evtdata);
-  if ($('#local_feed').text() == '') return;
-  else _leave({feed: parseInt($('#local_feed').text(), 10), display: $('#display_name').val()});
-};
-
-// Unpublish feed (no longer a publisher)
 unpublish.onclick = () => {
   if ($('#unpublish').text() == 'Unpublish') {
     if (local_feed) {
@@ -109,8 +94,6 @@ unpublish.onclick = () => {
   }
 };
 
-
-// Utility functions
 function getId() {
   return Math.floor(Number.MAX_SAFE_INTEGER * Math.random());
 }
@@ -122,8 +105,6 @@ function getURLParameter(name) {
   return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search) || [, ''])[1].replace(/\+/g, '%20')) || null;
 }
 
-// Scheduling connection attempts
-// general connection
 const scheduleConnection = (function () {
   let task = null;
   const delay = 5000;
@@ -139,7 +120,6 @@ const scheduleConnection = (function () {
   });
 })();
 
-// room connection schedule
 const scheduleConnection2 = (function (room) {
   console.log('room==='+room);
   let task = null;
@@ -157,7 +137,6 @@ const scheduleConnection2 = (function (room) {
   });
 })();
 
-// socket initiation
 // const socket = io("http://0.0.0.0:4443/janode");
 const socket = io({
   rejectUnauthorized: false,
@@ -165,16 +144,26 @@ const socket = io({
   reconnection: false,
 });
 
-
-// Functions for room actions
-// completely destroy target room
 function destroy_room(room, desc) {
-  if (confirm(desc + ' room을 삭제하겠습니까?')) {
-    _destroy({ room : room, permanent : false, secret : 'adminpwd' });
-  }
+    if (confirm(desc + ' room을 삭제하겠습니까?')) {
+      _destroy({ room : room, permanent : false, secret : 'adminpwd' });
+    }
 };
   
-// Join an hypothetical room: soon to be deleted
+// function join22(room, desc) {
+//   var display_name = $('#display_name').val();
+
+//   // var display_name = $('#myInput').val();
+//   // if (display_name == '') {
+//   //   alert('참석할 이름을 입력해야 합니다.');
+//   //   return;
+//   // }
+//   join({room: room, display:display_name, token:null});
+//   // if (confirm('Room ['+ desc+'] 에 [' + display_name+ '] 이름으로 조인하겠습니까?')) {
+//   //   join({room: room, display:display_name, token:null});
+//   // }
+
+// }
 function join22(room, desc) {
   var display_name = $('#display_name').val();
   if (display_name == '') {
@@ -184,36 +173,31 @@ function join22(room, desc) {
   join({room: room, display:display_name, token:null});
 }
 
-// Join an available room
 function join({ room = myRoom, display = myName, token = null }) {
+  console.log("================ join =============");
   const joinData = {
     room,
     display,
     token,
   };
-  console.log("================ join with data =============", {
+  console.log('join sent as below ', getDateTime());
+  console.log({
     data: joinData,
     _id: getId(),
   });
-  
   socket.emit('join', {
     data: joinData,
     _id: getId(),
   });
 }
 
-// Subscribe to an available room
-function subscribe({ feed, streams, room = myRoom, substream, temporal}) {
-  console.log("================ subscribe =============", myRoom, room);
+function subscribe({ feed, room = myRoom, substream, temporal }) {
+  console.log("================ subscribe =============");
   const subscribeData = {
     room,
     feed,
-    streams
   };
 
-  console.log('===========subscribeData=========', subscribeData)
-
-  if (Array.isArray(streams)) subscribeData.streams = streams;
   if (typeof substream !== 'undefined') subscribeData.sc_substream_layer = substream;
   if (typeof temporal !== 'undefined') subscribeData.sc_temporal_layers = temporal;
 
@@ -228,107 +212,73 @@ function subscribe({ feed, streams, room = myRoom, substream, temporal}) {
   });
 }
 
-
 function subscribeTo(peers, room = myRoom) {
-  console.log("================ subscribeToPeers =============", myRoom, peers)
-  peers.forEach(({ feed, streams }, index) => {
-    console.log("================ For each subscribeToPeers =============", myRoom, feed)
-    streams[0].feed = feed
-    streams[1].feed = feed   
-
-    if (index < itemsPerPage){
-      let selectedStreams = [streams[0], streams[1]]
-      subscribe({ feed, room, streams: selectedStreams });
-    } else{
-      let selectedStreams = [streams[0]]
-      subscribe({ feed, room, streams: selectedStreams });
-    }
-    
+  peers.forEach(({ feed }) => {
+    // console.log({ feed, room });
+    subscribe({ feed, room });
   });
 }
 
 function trickle({ feed, candidate }) {
-  const trickleData = candidate ? { candidate } : {};
-  trickleData.feed = feed;
-  const trickleEvent = candidate ? 'trickle' : 'trickle-complete';
+  // const trickleData = candidate ? { candidate } : {};
+  // trickleData.feed = feed;
+  // const trickleEvent = candidate ? 'trickle' : 'trickle-complete';
 
-  socket.emit(trickleEvent, {
-    data: trickleData,
-    _id: getId(),
-  });
+  // console.log("================ trickle =============");
+  // console.log(trickleEvent + ' sent as below ', getDateTime());
+  // console.log({
+  //   data: trickleData,
+  //   _id: getId(),
+  // });
+
+  // socket.emit(trickleEvent, {
+  //   data: trickleData,
+  //   _id: getId(),
+  // });
 }
 
-function update(subscribe, unsubscribe) {
-  let configureData = {}
-  console.log("================ update =============");
-  if (subscribe){
-    configureData.subscribe = subscribe;
-  } 
-
-  if (unsubscribe){
-    configureData.unsubscribe = unsubscribe;
-  }
-
-  const configId = getId();
-
-  console.log('=============update data to be sent to server========== ',{
-    data: configureData,
-    _id: configId,
-  });
-
-  socket.emit('update', {
-    data: configureData,
-    _id: configId,
-  });
-}
-
-function configure({ feed, jsep, restart, substream, temporal, just_configure, video, offer_video, streams }) {
+function configure({ feed, jsep, restart, substream, temporal, just_configure }) {
   console.log("================ configure =============");
   var v_just_configure;
   const configureData = {
     feed,
-    audio: audioSet,
-    video,
-    offer_video,
+    audio: true,
+    video: true,
     data: true,
-    restart,
-    streams
   };
   if (typeof substream !== 'undefined') configureData.sc_substream_layer = substream;
   if (typeof temporal !== 'undefined') configureData.sc_temporal_layers = temporal;
   if (jsep) configureData.jsep = jsep;
-  if (typeof restart === 'boolean') configureData.restart = restart;
-  if (typeof video === 'boolean') configureData.video = video;
-  if (streams && Array.isArray(streams)) configureData.streams = streams;
-  if (typeof audio === 'boolean') configureData.audio = audio;
-  if (typeof offer_video === 'boolean') configureData.offer_video = offer_video;
+  if (typeof restart === 'boolean') configureData.restart = false;
   if (typeof just_configure !== 'undefined') v_just_configure = just_configure;
   else v_just_configure = false;
 
   const configId = getId();
 
-  console.log('=============configure data to be sent to server========== ',{
+  console.log('configure sent as below ', getDateTime());
+  console.log({
     data: configureData,
     _id: configId,
   });
-
-  
-  console.log("*******************configure emitted")
   socket.emit('configure', {
     data: configureData,
     _id: configId,
     just_configure: v_just_configure,
   });
-  
+
   if (jsep) pendingOfferMap.set(configId, { feed });
-  console.log("==========Inside configure, check pendingOfferMap========", pendingOfferMap)
 }
+$(document).on("click", ".audioOn, .audioOff", function () {
+  configure_bitrate_audio_video('audio');
+});
+$(document).on("click", ".videoOn, .videoOff", function () {
+  configure_bitrate_audio_video('video');
+});
 
 async function configure_bitrate_audio_video(mode, bitrate=0) {
   console.log("================ configure_bitrate_audio_video =============");
   var feed = parseInt($('#local_feed').text());
 
-  // Configure the bitrate
   if (mode == 'bitrate') {
     var configureData = {
       feed,
@@ -349,11 +299,14 @@ async function configure_bitrate_audio_video(mode, bitrate=0) {
    
   } else if (mode =='audio') {
     // 오디오를 끄는 것이면,
-    if ($('#audioset').hasClass('btn-primary')) {
-      $('#audioset').removeClass('btn-primary').addClass('btn-warning');
-      audioSet = false;
+    if ($('#audioBtn').hasClass('audioOn')) {
+      $('#audioBtn').removeClass('audioOn').addClass('audioOff');
 
-      console.log('========mute audio===========');
+      console.log('오디오 끄기');
+      // localStream = await navigator.mediaDevices.getUserMedia(
+      //   { audio: false, 
+      //     video: local_video_onoff
+      //   });
       const audioTrack = localStream.getAudioTracks()[0];
       if (audioTrack) {
         // 오디오를 끄거나 켤 수 있는 상태인지 확인합니다.
@@ -362,21 +315,93 @@ async function configure_bitrate_audio_video(mode, bitrate=0) {
         if (isAudioEnabled) {
           // 오디오를 끕니다.
           audioTrack.enabled = false;
-          console.log('========mute audio===========');
+          console.log("오디오를 끔");
         } else {
           // 오디오를 켭니다.
           audioTrack.enabled = true;
-          console.log('========unmute audio===========');
+          console.log("오디오를 켬");
         }
       } else {
-        console.log('========cannot track audio===========');
+        console.log("오디오 트랙을 찾을 수 없습니다.");
+      }  
+      // var audioTrack = localStream.getAudioTracks();
+      // if (audioTrack.length > 0) {
+      //   localStream.removeTrack(audioTrack[0]);
+      //   let localVideoContainer = document.getElementById('video_' + feed);
+      //   let localVideoStreamElem = localVideoContainer.getElementsByTagName('video')[0];
+      //   localVideoStreamElem.srcObject = localStream;
+      // }
+      // localStream.getTracks().forEach(track => {
+      //   if (track.kind == 'audio') {
+      //     console.log('stopping audio track', track);
+      //     // track.enabled = false;
+      //     track.stop();
+      //     // local_video_sender.replaceTrack(track);
+      //     // local_pc.removeTrack(local_audio_sender);
+      //     console.log('audio track has been stopped', track);
+      //   } else {
+      //     console.log('nothing for video track when stopping audio track');
+      //   }
+      // });
+      local_audio_onoff = false;
+      // let localVideoContainer = document.getElementById('video_' + feed);
+      // let localVideoStreamElem = localVideoContainer.getElementsByTagName('video')[0];
+      // localVideoStreamElem.srcObject = localStream;
+
+      // localStream.getTracks().forEach(track => {
+      //   console.log('current track ===', track.kind);
+      //   if (track.kind == 'audio') {
+      //     console.log('오디오트랙 remove');
+      //     console.log(track);
+      //     console.log('오디오 트랙 remove 전 pcMap=',pcMap);
+      //     local_pc.removeTrack(local_audio_sender);
+      //     // local_audio_sender.replaceTrack(track);
+      //     pcMap.delete(local_feed);
+      //   }
+      // });
+
+      // pcMap.set(local_feed, local_pc);
+      // console.log('오디오 트랙 remove 후 pcMap=',pcMap);
+
+      // var vidTrack = localStream.getAudioTracks();
+      // vidTrack.forEach(track => track.enabled = false);  
+
+      try {
+        // pcMap.forEach(async (pc, feed, map) => {
+        //   console.log('오디오 끄기 pcMap feed=', feed, pc);
+        //   var changed_offer = await pc.createOffer();
+        //   await pc.setLocalDescription(changed_offer);
+        //   configure({ feed: feed, jsep: changed_offer, restart: true, just_configure: true  });
+        //   console.log('set local sdp OK with changed_offer for audio', feed);
+            
+        // });
+
+        // var changed_offer = await pc.createOffer();
+        // local_pc.setLocalDescription(changed_offer);
+        // configure({ feed: local_feed, jsep: changed_offer, restart: true, just_configure: true  });
+      } catch (e) {
+        console.log('error while doing offer for changing', e);
+        return;
       }
+
+      // var configureData = {
+      //   feed,
+      //   audio: false,
+      // };
+      // console.log({
+      //   data: configureData,
+      //   _id: getId(),
+      // });
+      // socket.emit('configure', {
+      //   data: configureData,
+      //   _id: getId(),
+      // });
+
     } else {
     // 오디오를 켜는 것이면,
-    $('#audioset').removeClass('btn-warning').addClass('btn-primary');
-      audioSet = true;
+    $('#audioBtn').removeClass('audioOff').addClass('audioOn');
 
-      console.log('========unmute audio===========');
+      console.log('오디오 켜기');
       const audioTrack = localStream.getAudioTracks()[0];
       if (audioTrack) {
         // 오디오를 끄거나 켤 수 있는 상태인지 확인합니다.
@@ -385,21 +410,96 @@ async function configure_bitrate_audio_video(mode, bitrate=0) {
         if (isAudioEnabled) {
           // 오디오를 끕니다.
           audioTrack.enabled = false;
-          console.log('========mute audio===========');
+          console.log("오디오를 끔");
         } else {
           // 오디오를 켭니다.
           audioTrack.enabled = true;
-          console.log('========unmute audio===========');
+          console.log("오디오를 켬");
         }
       } else {
-        console.log('========cannot track audio===========');
-      }         
+        console.log("오디오 트랙을 찾을 수 없습니다.");
+      }            
+      // frameRate = parseInt($('#frame_rate').val());
+      // const localStream2 = await navigator.mediaDevices.getUserMedia(
+      //   { audio: true, 
+      //     video: local_video_onoff
+      //   });
+  
+      // localStream2.getTracks().forEach(track => {
+      //   console.log('local_audio_sender, ', local_audio_sender);
+      //   console.log('local_video_sender, ', local_video_sender);
+      //   if (track.kind == 'audio') {
+      //     console.log('replacing audio track', track, local_audio_sender);
+      //     // local_audio_sender.replaceTrack(track); //이게 맞아
+      //     local_audio_sender = local_pc.addTrack(track, localStream2); 
+      // console.log('audio track has been replaced.', track);
+      //   } else {
+      //     console.log('nothing for video track when turning on the audio track');
+      //   }
+      // });
+      local_audio_onoff = true;
+      // let localVideoContainer = document.getElementById('video_' + feed);
+      // let localVideoStreamElem = localVideoContainer.getElementsByTagName('video')[0];
+      // localVideoStreamElem.srcObject = localStream2;
+
+      // localStream.getTracks().forEach(track => {
+      //   console.log('current track ===', track.kind);
+      //   if (track.kind == 'audio') {
+      //     console.log('오디오트랙 add');
+      //     console.log(local_audio_sender);
+      //     local_audio_sender = local_pc.addTrack(track, localStream); 
+
+      //     // local_audio_sender.replaceTrack(track);
+      //     pcMap.delete(local_feed);
+      //   }
+      // });
+      // pcMap.set(local_feed, local_pc);
+
+      // var vidTrack = localStream.getAudioTracks();
+      // vidTrack.forEach(track => track.enabled = true);  
+
+      try {
+        // pcMap.forEach(async (pc, feed, map) => {
+        //   console.log('오디오 켜기 pcMap feed=', feed, pc);
+        //   var changed_offer = await pc.createOffer();
+        //   await pc.setLocalDescription(changed_offer); // <<- 여기에서 에러..
+        //   configure({ feed: feed, jsep: changed_offer, restart: true, just_configure: true  });
+        //   console.log('set local sdp OK with changed_offer for audio', feed);
+            
+        // });
+        // var changed_offer = await pc.createOffer();
+        // local_pc.setLocalDescription(changed_offer);
+        // configure({ feed: local_feed, jsep: changed_offer, restart: true, just_configure: true  });
+
+      } catch (e) {
+        console.log('error while doing offer for changing', e);
+        return;
+      }
+    
+      // setLocalVideoElement(localStream, local_feed);
+
+      // var vidTrack = localStream.getAudioTracks();
+      // vidTrack.forEach(track => track.enabled = true);
+      // var configureData = {
+      //   feed,
+      //   audio: true,
+      // };
+      // console.log({
+      //   data: configureData,
+      //   _id: getId(),
+      // });
+      // socket.emit('configure', {
+      //   data: configureData,
+      //   _id: getId(),
+      // });
+
     }
   } else {
     //비디오를 끄는 것이면
-    if ($('#videoset').hasClass('btn-primary')) {
-      $('#videoset').removeClass('btn-primary').addClass('btn-warning');
-      console.log('========mute video===========');
+    if ($('#videoBtn').hasClass('videoOn')) {
+      $('#videoBtn').removeClass('videoOn').addClass('videoOff');
+      
+      console.log('비디오 끄기');
       // 미디어 스트림에서 비디오 트랙을 가져옵니다.
       const videoTrack = localStream.getVideoTracks()[0];
 
@@ -411,26 +511,84 @@ async function configure_bitrate_audio_video(mode, bitrate=0) {
         if (isVideoEnabled) {
           // 비디오를 끕니다.
           videoTrack.enabled = false;
-          console.log('========mute video===========');
+          console.log("비디오를 끔");
         } else {
           // 비디오를 켭니다.
           videoTrack.enabled = true;
-          console.log('========unmute video===========');
+          console.log("비디오를 켬");
         }
       } else {
-        console.log('========cannot track video===========');
-      }  
-      
+        console.log("비디오 트랙을 찾을 수 없습니다.");
+      } 
+      // $('.localVideoTag').hide();
+      // $('.localBlankPerson').show();
+      // var videoTrack = userStream.getVideoTracks();
+      // if (videoTrack.length > 0) {
+      //   localStream.removeTrack(videoTrack[0]);
+      //   let localVideoContainer = document.getElementById('video_' + feed);
+      //   // let localVideoStreamElem = localVideoContainer.getElementsByTagName('video')[0];
+      //   // localVideoStreamElem.srcObject = null;
+      //   localVideoContainer.style.display = 'none';
+      // }
+
+      // localStream = await navigator.mediaDevices.getUserMedia(
+      //   { audio: local_audio_onoff, 
+      //     video: false
+      //   });
+
+      // localStream.getTracks().forEach(track => {
+      //   if (track.kind == 'video') {
+      //     console.log('stopping video track', track);
+      //     // track.enabled = false;
+      //     track.stop();
+      //     console.log('video track has been stopped', track);
+      //     // local_video_sender.replaceTrack(track);
+      //   } else {
+      //     console.log('nothing for audio track when stopping the video track');
+      //   }
+      // });
+      local_video_onoff = false;
+
+      // var vidTrack = localStream.getVideoTracks();
+      // vidTrack.forEach(track => track.enabled = false);
+
       try {
+        // pcMap.forEach(async (pc, feed, map) => {
+        //   console.log('pcMap feed=', feed);
+        //   var changed_offer = await pc.createOffer();
+        //   // await pc.setLocalDescription(changed_offer);
+        //   configure({ feed: feed, jsep: changed_offer, restart: true, just_configure: true  });
+        //   console.log('set local sdp OK with changed_offer for video', feed);
+            
+        // });
+        // var changed_offer = await pc.createOffer();
+        // local_pc.setLocalDescription(changed_offer);
+        // configure({ feed: local_feed, jsep: changed_offer, restart: true, just_configure: true  });
+
       } catch (e) {
         console.log('error while doing offer for changing', e);
         return;
       }
+
+      // var configureData = {
+      //   feed,
+      //   video: false,
+      // };
+      // console.log({
+      //   data: configureData,
+      //   _id: getId(),
+      // });
+      // socket.emit('configure', {
+      //   data: configureData,
+      //   _id: getId(),
+      // });
+    
+
     } else {
       //비디오를 켜는 것이면,
-      $('#videoset').removeClass('btn-warning').addClass('btn-primary');
+      $('#videoBtn').removeClass('videoOff').addClass('videoOn');
 
-      console.log('========unmute video===========');
+      console.log('비디오 켜기');
       // 미디어 스트림에서 비디오 트랙을 가져옵니다.
       const videoTrack = localStream.getVideoTracks()[0];
 
@@ -442,21 +600,71 @@ async function configure_bitrate_audio_video(mode, bitrate=0) {
         if (isVideoEnabled) {
           // 비디오를 끕니다.
           videoTrack.enabled = false;
-          console.log('========mute video===========');
+          console.log("비디오를 끔");
         } else {
           // 비디오를 켭니다.
           videoTrack.enabled = true;
-          console.log('========unmute video===========');
+          console.log("비디오를 켬");
         }
       } else {
-        console.log('========cannot track video===========');
-      } 
-      
+        console.log("비디오 트랙을 찾을 수 없습니다.");
+      }
+      // $('.localBlankPerson').hide();
+      // $('.localVideoTag').show();
+
+      // frameRate = parseInt($('#frame_rate').val());
+      // localStream = await navigator.mediaDevices.getUserMedia(
+      //   { audio: local_audio_onoff, 
+      //     video: { frameRate: { ideal: frameRate, max: frameRate } } 
+      //   });
+      // localStream.getTracks().forEach(track => {
+      //   if (track.kind == 'video') {
+      //     console.log('replacing track', track.kind, track);
+      //     local_video_sender.replaceTrack(track); //이게 맞아
+      //   } else {
+      //     console.log('nothing for audio track when turning on the video track', track.kind, track);
+      //   }
+      // });
+      // local_video_onoff = { frameRate: { ideal: frameRate, max: frameRate } };
+      // let localVideoContainer = document.getElementById('video_' + feed);
+      // let localVideoStreamElem = localVideoContainer.getElementsByTagName('video')[0];
+      // localVideoStreamElem.srcObject = localStream;
+      // localVideoContainer.style.display = 'block';
+
+      // var vidTrack = localStream.getVideoTracks();
+      // vidTrack.forEach(track => track.enabled = true);
+
       try {
+        // pcMap.forEach(async (pc, feed, map) => {
+        //   console.log('pcMap feed=', feed);
+        //   var changed_offer = await pc.createOffer();
+        //   // await pc.setLocalDescription(changed_offer);
+        //   configure({ feed: feed, jsep: changed_offer, restart: true, just_configure: true  });
+        //   console.log('set local sdp OK with changed_offer for video', feed);
+            
+        // });
+        // var changed_offer = await pc.createOffer();
+        // local_pc.setLocalDescription(changed_offer);
+        // configure({ feed: local_feed, jsep: changed_offer, restart: true, just_configure: true  });
+
       } catch (e) {
         console.log('error while doing offer for changing', e);
         return;
       }
+
+      // var configureData = {
+      //   feed,
+      //   video: true,
+      // };
+      // console.log({
+      //   data: configureData,
+      //   _id: getId(),
+      // });
+      // socket.emit('configure', {
+      //   data: configureData,
+      //   _id: getId(),
+      // });
+
     }
   }
 
@@ -466,6 +674,12 @@ async function publishOwnFeed() {
   try {
     const offer = await doOffer(local_feed, local_display, false);
     configure({ feed: local_feed, jsep: offer, just_configure: false });
+    // subscribeTo(data.publishers, data.room);
+    // var vidTrack = localStream.getVideoTracks();
+    // vidTrack.forEach(track => track.enabled = true);
+    // var vidTrack = localStream.getAudioTracks();
+    // vidTrack.forEach(track => track.enabled = true);
+
     $('#unpublish').text('Unpublish');
   } catch (e) {
     console.log('error while doing offer in publishOwnFeed()', e);
@@ -570,12 +784,10 @@ function start({ feed, jsep = null }) {
   };
 
   console.log('start sent as below ', getDateTime());
-  console.log("=========inside start received data========",{
+  console.log({
     data: startData,
     _id: getId(),
   });
-
-  console.log("*******************start emitted")
   socket.emit('start', {
     data: startData,
     _id: getId(),
@@ -644,14 +856,12 @@ function _listRooms() {
   console.log({
     _id: getId(),
   });
-
-  console.log('***********list-rooms emitted*********')
   socket.emit('list-rooms', {
     _id: getId(),
   });
 }
 
-function _create({ room, description, max_publishers = 6, audiocodec = 'opus', videocodec = 'vp8', talking_events = true, talking_level_threshold = 25, talking_packets_threshold = 100, permanent = false, bitrate = 128000 }) {
+function _create({ room, description, max_publishers = 6, audiocodec = 'opus', videocodec = 'vp8', talking_events = false, talking_level_threshold = 25, talking_packets_threshold = 100, permanent = false, bitrate = 512000 }) {
   console.log("================ _create =============");
   console.log('create sent as below ', getDateTime());
   console.log({
@@ -795,6 +1005,8 @@ function _listForward({ room = myRoom, secret = 'adminpwd' }) {
   });
 }
 
+
+
 socket.on('connect', () => {
   console.log('socket connected');
   $('#connect_status').val('connected');
@@ -802,19 +1014,35 @@ socket.on('connect', () => {
   $('#connect').prop('disabled', true);
   $('#disconnect, #create_room, #list_rooms' ).prop('disabled', false);
 
-  //url 에 room_id 가 있으면 바로 
-  const room_id = $('#curr_room_name').attr('room_id');
-  console.log('room_id = ', room_id);
-  if (room_id != '') {
-    join22(parseInt(room_id));
-  }
-  
   socket.sendBuffer = [];
-  // var display_name = $('#display_name').val();
+  // var display_name = $('#myInput').val();
   // join({room: 1264989511454137, display:display_name, token:null});
-  
-  //scheduleConnection(0.1);
+  handleRoomsList();
 });
+
+// 여기에서 사용할 변수 선언.
+let hasRoomsListBeenHandled = false;
+
+function handleRoomsList() {
+  //scheduleConnection(0.1);
+  // 이 밑의 함수가 딱 1회만 실행 하고싶다.
+  socket.on('rooms-list', ({ data }) => {
+
+    if (hasRoomsListBeenHandled) return;
+    console.log('data in rooms-list >> ', JSON.parse(data));
+    // let totalParticipants = data.list[0].num_participants
+    let totalParticipants = JSON.parse(data)[0].num_participants
+
+    if (totalParticipants < 20) { 
+      join({room: 1234, display:$('#myInput').val(), token:null})
+    } else {
+      alert(`You can not join!!! Already Too many participants`);
+    }
+
+    // 이벤트 핸들러가 실행되었음을 표시
+    hasRoomsListBeenHandled = true;
+  });
+}
 
 socket.on('disconnect', () => {
   console.log('socket disconnected');
@@ -842,7 +1070,7 @@ socket.on('leaveAll', ({ data }) => {
 
 });
 
-socket.on('videoroom-error', ({ error }) => {
+socket.on('videoroom-error', ({ error, _id }) => {
   // alert(error);
   console.log('videoroom error', error);
   if (error === 'backend-failure' || error === 'session-not-available') {
@@ -859,8 +1087,8 @@ socket.on('videoroom-error', ({ error }) => {
 });
 
 socket.on('joined', async ({ data }) => {
-  console.log('=========joined response from server=========', data);
-
+  console.log('joined to room ', getDateTime());
+  console.log(data);
   $('#local_feed').text(data.feed);
   $('#private_id').text(data.private_id);
   $('#curr_room_name').val(data.description);
@@ -870,33 +1098,13 @@ socket.on('joined', async ({ data }) => {
   setLocalVideoElement(null, null, null, data.room);
 
   try {
-    console.log("=========joined data to be sent to server=======(false included)", (data.feed, data.display))
     const offer = await doOffer(data.feed, data.display, false);
-
     configure({ feed: data.feed, jsep: offer, just_configure: false });
     subscribeTo(data.publishers, data.room);
-
-    //url에 video_flag=off 이면 video를 끔
-    const video_flag = $('#curr_room_name').attr('video_flag');
-    // console.log('video_flag = ', video_flag);
-    
-    // creating a custom variable to set video to ON and OFF. not relevant now
-    if (video_flag == 'off') {
-      console.log('video_flag=', video_flag, ' so making video off...');
-
-      // If custom video_flag is off then configure again with value 'video'
-      configure_bitrate_audio_video('video');
-    } else {
-
-      console.log("========Inside Joined, configure each localstream video========")
-      var vidTrack = localStream.getVideoTracks();
-      vidTrack.forEach(track => track.enabled = true);
-      var vidTrack = localStream.getAudioTracks();
-      vidTrack.forEach(track => track.enabled = true);
-  
-    }
-    configure_bitrate_audio_video('audio');
-  
+    var vidTrack = localStream.getVideoTracks();
+    vidTrack.forEach(track => track.enabled = true);
+    var vidTrack = localStream.getAudioTracks();
+    vidTrack.forEach(track => track.enabled = true);
   } catch (e) {
     console.log('error while doing offer', e);
   }
@@ -909,8 +1117,6 @@ socket.on('subscribed', async ({ data }) => {
   try {
     const answer = await doAnswer(data.feed, data.display, data.jsep);
     start({ feed: data.feed, jsep: answer });
-
-    console.log(">>>>>>>>>>>> from subscribed move to listrooms>>>>>>>>>>>>")
     _listRooms();
   } catch (e) { console.log('error while doing answer', e); }
 });
@@ -921,10 +1127,8 @@ socket.on('participants-list', ({ data }) => {
 });
 
 socket.on('talking', ({ data }) => {
-  console.log("========== talking started========")
   console.log('talking notify', getDateTime());
   console.log(data);
-  setRemoteVideoElement(null, data.feed, null, data.talking)
 });
 
 socket.on('kicked', ({ data }) => {
@@ -941,23 +1145,19 @@ socket.on('allowed', ({ data }) => {
   console.log(data);
 });
 
-
 socket.on('configured', async ({ data, _id }) => {
-  console.log('======== configured received this data========', data);
+  console.log('feed configured just_configure=', data.just_configure, getDateTime());
+  console.log(data);
   pendingOfferMap.delete(_id);
-  console.log('=========After the pending offermap id deleted=======', pendingOfferMap)
-  console.log("==========Inside the configured, check the pc map========", pcMap)
   const pc = pcMap.get(data.feed);
   if (pc && data.jsep) {
     try {
       await pc.setRemoteDescription(data.jsep);
-      console.log('configure remote sdp OK');
-      if (data.jsep.type === 'offer') {
+      console.log('configure remote sdp OK ', data.jsep.type);
+      if (data.jsep.type === 'offer' && data.just_configure == false) {
+        console.log('data.jsep.type === offer 이므로 doAnswer()와 start() 실행.. just_configure=',data.just_configure)
         const answer = await doAnswer(data.feed, null, data.jsep);
-        const startData = {feed: data.feed, jsep: answer}
-        start(startData);
-        _listRooms();
-        // start(answer)
+        start(data.feed, answer);
       }
     } catch (e) {
       console.log('error setting remote sdp', e);
@@ -965,31 +1165,15 @@ socket.on('configured', async ({ data, _id }) => {
   }
 });
 
-socket.on('updated', async ({ data }) => {
-  console.log("=========updated received from server========", data)
-
-  try {
-    const answer = await doAnswer(data.streams[0].feed_id, data.streams[0].feed_display, data.jsep);
-    start({ feed: data.streams[0].feed_id, jsep: answer });
-    console.log(">>>>>>>>>>>> from updated move to listrooms>>>>>>>>>>>>")
-    _listRooms();
-  } catch (e) { console.log('error while doing answer', e); }
-
-});
-
-
 socket.on('display', ({ data }) => {
   console.log('feed changed display name ', getDateTime());
   console.log(data);
-  setRemoteVideoElement(null, data.streams[0].feed_id, data.display);
+  setRemoteVideoElement(null, data.feed, data.display);
 });
 
 socket.on('started', ({ data }) => {
-  console.log('=========subscribed feed started ========', getDateTime());
-  console.log("========= Started data=========", data);
-
-  console.log('>>>>>>>>>>>>>>from started move to setremotevideoelement with data below >>>>>>>>>>>>>')
-  setRemoteVideoElement(null, data.feed, null);
+  console.log('subscribed feed started ', getDateTime());
+  console.log(data);
 });
 
 socket.on('paused', ({ data }) => {
@@ -1003,35 +1187,19 @@ socket.on('switched', ({ data }) => {
   setRemoteVideoElement(null, data.from_feed, data.display);
 });
 
-
 socket.on('feed-list', ({ data }) => {
-  const divElements = document.querySelectorAll('#remotes > div');
-
-  const remoteContainers = Array.from(divElements).filter(div => {
-    const computedStyle = window.getComputedStyle(div);
-    return computedStyle.getPropertyValue('display') === 'block';
-  });
-  const totalItems = remoteContainers.length;
-  
+  // alert('new feeds available'); 
   console.log('new feeds available! ', getDateTime());
   console.log(pcMap);
   console.log(data);
   let data_room = data.room;
-  data.publishers.forEach(({ feed, streams }, index) => {
-    console.log({ feed, data_room , streams}, 'feed=', feed);
+  // subscribeTo(data.publishers, data.room);
+  data.publishers.forEach(({ feed }) => {
+    console.log({ feed, data_room }, 'feed=', feed);
     if (pcMap.has(feed)) {
       console.log('이미 있는 feed 임. No need to subscribe');
     } else {
-      streams[0].feed = feed
-      streams[1].feed = feed
-
-      if (totalItems < itemsPerPage){
-        let selectedStreams = [streams[0], streams[1]]
-        subscribe({ feed, room: data_room, streams: selectedStreams });
-      } else{
-        let selectedStreams = [streams[0]]
-        subscribe({ feed, room: data_room, streams: selectedStreams });
-      }
+      subscribe({feed, room : data_room});
     }
   });
 });
@@ -1055,9 +1223,6 @@ socket.on('leaving', ({ data }) => {
     removeVideoElementByFeed(data.feed);
     closePC(data.feed);
     renderPage(currentPage);
-    renderButton(currentPage)
-
-
   }
   _listRooms();
 });
@@ -1087,19 +1252,11 @@ socket.on('exists', ({ data }) => {
 
 socket.on('rooms-list', ({ data }) => {
   var parsedData = JSON.parse(data);
-  console.log('========= rooms-list form server======', parsedData)
-
-  console.log("========Hide destroy button for Room 1111, 2222, 1234========")
+  // console.log('rooms list',  parsedData);
   $('#room_list').html('');
-  parsedData.forEach(rooms => {
-    var display_style = '';
-    if ([1234, 1111, 2222].includes(rooms.room)) {
-      display_style="display:none;";
-    } else {
-      display_style = '';
-    } 
-    $('#room_list').html($('#room_list').html()+"<br>"+rooms.description+"("+rooms.num_participants+"/"+rooms.max_publishers+")&nbsp;<button class='btn btn-primary btn-xs' onclick='join22("+rooms.room+", \""+rooms.description+"\");'>join</button>&nbsp;"+"<button class='btn btn-primary btn-xs' style='"+display_style+"' onclick='destroy_room("+rooms.room+", \""+rooms.description+"\");'>destroy</button>");
-    
+  // data.list.forEach(rooms => {
+    parsedData.forEach(rooms => {
+    $('#room_list').html($('#room_list').html()+"<br><span class='room' room='"+rooms.room+"'>"+rooms.description+"</span>("+rooms.num_participants+"/"+rooms.max_publishers+")&nbsp;<button class='btn btn-primary btn-xs' room='"+rooms.room+"' onclick='join22("+rooms.room+", \""+rooms.description+"\");'>join</button>&nbsp;"+"<button class='btn btn-primary btn-xs' onclick='destroy_room("+rooms.room+", \""+rooms.description+"\");'>destroy</button>");
   });
 });
 
@@ -1134,44 +1291,37 @@ socket.on('rtp-fwd-list', ({ data }) => {
   console.log('rtp forwarders list', data);
 });
 
+////////////////////////////////////////////////////////
+// custom socket messages to receive from the Server
+////////////////////////////////////////////////////////
+socket.on('getRoomId', ({ data }) => {
+  console.log('getRoomId received ', getDateTime());
+  console.log(data);
+});
+
+////////////////////////////////////////////////////////
+// end
+////////////////////////////////////////////////////////
+
 async function _restartPublisher(feed) {
   const offer = await doOffer(feed, null);
   configure({ feed, jsep: offer, just_configure: false });
 }
 
-
-async function _restartSubscriberAudio(feed) {
-  configure({ feed, restart: true, just_configure: false, offer_video: true, video: true, audio: true, streams: [{ "type": "audio", "mid" : "0", "feed": feed }]});
+async function _restartSubscriber(feed) {
+  configure({ feed, restart: true, just_configure: false });
 }
-
-async function _restartSubscriberAudioVideo(feed) {
-  configure({ feed, restart: true, just_configure: false, offer_video: true, video: true, audio: true, streams: [{ "type": "audio", "mid" : "0", "feed": feed }, { "type": "video", "mid" : "1", "feed": feed, "send": true }]});
-}
-
-async function _subscribeUpdate(feed) {
-  console.log('=========inside subscribe update========', feed)
-  update([{ "type": "video", "mid" : "1", "mindex": "1", "feed": feed }], null);
-}
-
-async function _unsubscribeUpdate(feed) {
-  console.log("===========inside unsubscribe update========", feed)
-  update(null, [{ "type": "video", "mid" : "1", "mindex": "1", "feed": feed }]);
-}
-
 
 async function doOffer(feed, display) {
-
-  console.log('========= doOffer received data: feed=', feed, 'display=', display);
-
+  console.log('doOffer().. feed=', feed, 'display=', display);
   if (!pcMap.has(feed)) {
-    console.log('========= doOffer the requested feed', feed,'  doesnt exist in the pc start a new RTCPeerConnection');
+    console.log('doOffer() ==> ', feed,' feed용 pc 가 없어서 RTCPeerConnection 생성');
     const pc = new RTCPeerConnection({
       'iceServers': [{
         urls: 'stun:stun.l.google.com:19302'
       }],
     });
 
-    // Storing the current state of the pc into a variable called "local_pc"
     local_pc = pc;
 
     pc.onnegotiationneeded = event => console.log('pc.onnegotiationneeded doOffer', event);
@@ -1185,39 +1335,26 @@ async function doOffer(feed, display) {
     /* This one below should not be fired, cause the PC is used just to send */
     pc.ontrack = event => console.log('pc.ontrack', event);
 
-    console.log("========Inside doOffer, the pcMap before adding new========", pcMap)
-    console.log("========Inside doOffer, the new feed and pc to add========", (feed, pc))
     pcMap.set(feed, pc);
     local_feed = feed;
     local_display = display;
-    console.log('========Inside doOffer, the new pc added to the pcMap=======', pcMap);
+    console.log('pc 추가됨, pcMap===', pcMap);
 
     try {
       frameRate = parseInt($('#frame_rate').val());
       console.log('========frame_rate=', $('#frame_rate').val());
-
-      // Get my local stream and custom options
       localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: { frameRate: { ideal: frameRate, max: frameRate } } });
-      
-      // For each stream in my local, add to the pc
       localStream.getTracks().forEach(track => {
-        console.log('=========Inside doOffer, adding tracks to the localstream========', track, track.kind);
-        
+        console.log('adding track', track, track.kind);
         if (track.kind == 'audio') {
-
-          // the audio track and localstream are added to the pc
           local_audio_sender = pc.addTrack(track, localStream);
         }
         else {
-          // the video track and localstream are added to the pc
           local_video_sender = pc.addTrack(track, localStream);
 
         }
       });
-
-      console.log(">>>>>>>>>>>>>>from doOffer move to setlocalvideoelement >>>>>>>>>>>>>")
       setLocalVideoElement(localStream, feed, display);
-
     } catch (e) {
       console.log('error while doing offer', e);
       removeVideoElementByFeed(feed);
@@ -1245,15 +1382,10 @@ async function doOffer(feed, display) {
 
 }
 
-// Asynchronous function to handle answering an offer
 async function doAnswer(feed, display, offer) {
-  console.log('=============start of answer===========')
   console.log('doAnswer().. feed=', feed, 'display=', display, 'offer=', offer);
-  console.log('======== the pcMap ======', pcMap)
-
-  // Check if the RTCPeerConnection for the given feed already exists in the pcMap
   if (!pcMap.has(feed)) {
-    console.log('========doAnswer', feed,' feed does not exist in the RTCPeerConnection');
+    console.log('doAnswer() ==> ', feed,' feed용 pc 가 없어서 RTCPeerConnection 생성');
     const pc = new RTCPeerConnection({
       'iceServers': [{
         urls: 'stun:stun.l.google.com:19302'
@@ -1264,19 +1396,16 @@ async function doAnswer(feed, display, offer) {
     pc.onicecandidate = event => trickle({ feed, candidate: event.candidate });
     pc.oniceconnectionstatechange = () => {
       if (pc.iceConnectionState === 'failed' || pc.iceConnectionState === 'closed') {
-
-        console.log('=========doAnswer ice failed=========', pc.iceConnectionState)
-        console.log('=========doAnswer ice failed check the pc=========', pc)
-
         removeVideoElementByFeed(feed);
         closePC(feed);
       }
     };
     pc.ontrack = event => {
-      console.log('pc.ontrack', event); // streams 가 1개만 있음. 그래서 안나오는 중.
+      console.log('pc.ontrack', event);
 
       event.track.onunmute = evt => {
-        console.log('track.onunmute', evt);	
+        console.log('track.onunmute', evt);
+        /* TODO set srcObject in this callback */
       };
       event.track.onmute = evt => {
         console.log('track.onmute', evt);
@@ -1285,23 +1414,12 @@ async function doAnswer(feed, display, offer) {
         console.log('track.onended', evt);
       };
 
-      console.log("==========doAnswer after ice setting event details=========", event)
-
       const remoteStream = event.streams[0];
-
-      console.log("==========doAnswer after ice setting remoteStream=========", remoteStream)
-      console.log("======= moving to setremotevideoelement=======")
-
-
       setRemoteVideoElement(remoteStream, feed, display);
-
     };
 
-    console.log("========doAnswer add the feed and pc to the pcmap the feed=======", (feed))
-    console.log("========doAnswer add the feed and pc to the pcmap the pc=======", (pc))
     pcMap.set(feed, pc);
-
-    console.log('========doAnswer pc added to the pcMap=======', pcMap);
+    console.log('pc 추가됨, pcMap===', pcMap);
   }
 
   const pc = pcMap.get(feed);
@@ -1321,12 +1439,11 @@ async function doAnswer(feed, display, offer) {
     throw e;
   }
 }
-
 // Function to set up the local video element
 function setLocalVideoElement(localStream, feed, display, room) {
 
   // If a room is specified, update the room information in the HTML
-  if (room) document.getElementById('videos').getElementsByTagName('span')[0].innerHTML = '   --- VIDEOROOM (' + room + ') ---  ';
+  // if (room) document.getElementById('videos').getElementsByTagName('span')[0].innerHTML = '   --- VIDEOROOM (' + room + ') ---  ';
   
   // Check if the feed is undefined or null, return if true
   console.log('========setLocalVideoElement for the feed,========', feed);
@@ -1339,20 +1456,20 @@ function setLocalVideoElement(localStream, feed, display, room) {
     nameElem.innerHTML = display + ' (' + feed + ')';
     nameElem.style.display = 'table';
 
-    // Create a video element for the local stream
-    const localVideoStreamElem = document.createElement('video');
-    localVideoStreamElem.width = 320;
-    localVideoStreamElem.height = 240;
-    localVideoStreamElem.autoplay = true;
-    localVideoStreamElem.muted = 'muted'; // Mute the local video
-    localVideoStreamElem.style.cssText = '-moz-transform: scale(-1, 1); -webkit-transform: scale(-1, 1); -o-transform: scale(-1, 1); transform: scale(-1, 1); filter: FlipH;';
-    localVideoStreamElem.id = feed;
+     // Create a video element for the local stream
+     const localVideoStreamElem = document.createElement('video');
+     localVideoStreamElem.width = 320;
+     localVideoStreamElem.height = 240;
+     localVideoStreamElem.autoplay = true;
+     localVideoStreamElem.muted = 'muted'; // Mute the local video
+     localVideoStreamElem.style.cssText = '-moz-transform: scale(-1, 1); -webkit-transform: scale(-1, 1); -o-transform: scale(-1, 1); transform: scale(-1, 1); filter: FlipH;';
+     localVideoStreamElem.id = feed;
 
-    // Create an image for no video
-    const noImageElem = document.createElement('img')
-    noImageElem.src = '/images/sydney.png'
-    noImageElem.width = 320;
-    noImageElem.height = 240;
+     // Create an image for no video
+     const noImageElem = document.createElement('img')
+     noImageElem.src = '/images/blank_person.png'
+     noImageElem.width = 320;
+     noImageElem.height = 240;
 
     // If the localStream is provided, create a the video element and set the localstream as the source for the video element 
     if (localStream) {
@@ -1376,16 +1493,17 @@ function setLocalVideoElement(localStream, feed, display, room) {
       noImageElem.style.display = 'none'; 
     }    
 
-    // Create a container div for the local video (without video element)
-    // **** the create container div could have been moved out of the if statement
-    const localVideoContainer = document.createElement('div')
-    localVideoContainer.id = 'video_' + feed
-    localVideoContainer.appendChild(nameElem)
-    localVideoContainer.appendChild(localVideoStreamElem);
-    localVideoContainer.appendChild(noImageElem)
+      // Create a container div for the local video (without video element)
+      // **** the create container div could have been moved out of the if statement
+      const localVideoContainer = document.createElement('div')
+      localVideoContainer.id = 'video_' + feed
+      localVideoContainer.appendChild(nameElem)
+      localVideoContainer.appendChild(localVideoStreamElem);
+      localVideoContainer.appendChild(noImageElem)
 
-    // Append the container to the 'locals' element in the HTML
-    document.getElementById('locals').appendChild(localVideoContainer)
+      // Append the container to the 'locals' element in the HTML
+      document.getElementById('local2').appendChild(localVideoContainer)
+      // document.getElementById('locals').appendChild(localVideoContainer)
     
   }
   else {
@@ -1395,7 +1513,7 @@ function setLocalVideoElement(localStream, feed, display, room) {
 
     // Create an image for no video
     const noImageElem = document.createElement('img')
-    noImageElem.src = '/images/sydney.png'
+    noImageElem.src = '/images/blank_person.png'
     noImageElem.width = 320;
     noImageElem.height = 240;
 
@@ -1432,14 +1550,14 @@ function setLocalVideoElement(localStream, feed, display, room) {
 // New code insert start ---------
 
 // When the page is clicked
-document.getElementById('js-pagination').addEventListener('click', (event) => {
-  if (event.target.tagName === 'BUTTON') {
-    currentPage = parseInt(event.target.textContent);
-    renderButton(currentPage);
-    renderPage(currentPage)
-    renderUpdate()
-  }
-});
+// document.getElementById('js-pagination').addEventListener('click', (event) => {
+//   if (event.target.tagName === 'BUTTON') {
+//     currentPage = parseInt(event.target.textContent);
+//     // renderButton(currentPage);
+//     renderPage(currentPage)
+//     renderUpdate()
+//   }
+// });
 
 
 // Function to subscribe and unsubsribe to the list of available feeds
@@ -1469,110 +1587,101 @@ function renderPage(pageNumber) {
   subscribeList = [] // reset the list 
   unSubscribeList = [] // reset the list
 
-  // Get the initial index and final index for the required divs
   const startIndex = (pageNumber - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   
-  // Get the remote container element
-  const remoteContainers = document.querySelectorAll('#remotes > div');
+  // const remoteContainers = document.querySelectorAll('#remotes > div');
+  const remoteContainers = document.querySelectorAll('#remotesMulti > div');
 
   console.log("====Inside renderPage before add to the list======",subscribeList)
 
-  // Get each existing div elements and set to display if within the initial and final index
   remoteContainers.forEach((container, index) => {
       
-  console.log("the remote container is", container)
-  let feed = parseInt(container.querySelector('span').innerText.match(/\((\d+)\)/)[1]);
+    let feed = parseInt(container.querySelector('span').innerText.match(/\((\d+)\)/)[1]);
 
-  if (index >= startIndex && index < endIndex) {
-    // _subscribeUpdate(feed)
-    if (!subscribeList.includes(feed)){
-      console.log("=====the data pushed is=====", feed)
-      subscribeList.push(feed)
+    if (index >= startIndex && index < endIndex) {
+      if (!subscribeList.includes(feed)){
+        console.log("=====the data pushed is=====", feed)
+        subscribeList.push(feed)
+      }
+      container.style.display = 'block';
+    } 
+    else {
+      if (!unSubscribeList.includes(feed)){
+        unSubscribeList.push(feed)
+      }
+      container.style.display = 'none';
     }
-
-    container.style.display = 'block';
-  } else {
-    // _unsubscribeUpdate(feed)
-    if (!unSubscribeList.includes(feed)){
-      unSubscribeList.push(feed)
-    }
-    container.style.display = 'none';
-  }
   });
-}
 
-// Function to create the pagination buttons
-function renderButton(pageNumber){
-
-  // currentPage = pageNumber
-
-  console.log("=====inside the renderButton=======", pageNumber)
-  // Get the pagination container element
   const paginationContainer = document.getElementById('js-pagination');
-  // Get the remote container element
-  const remoteContainers = document.querySelectorAll('#remotes > div');
-
-  // Get the total number of items available in the remote container
-  const totalItems = remoteContainers.length;
-
-  // Calculate the number of pages to create e.g if itemsPerPage is 2 and there are 3 items, 
-  // the total pages will be 2
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-  
-  // Clear the existing pagination container to create a set of buttons
   paginationContainer.innerHTML = '';
 
-
-  // Check if the current page becomes empty
-  if ((pageNumber - 1) * itemsPerPage >= totalItems) {
-    // If the current page is empty, move to the previous page
-    currentPage = Math.max(1, currentPage - 1);
-  }
-
-
-  // Creating the pagination buttons depends on the totalpages
-  // Example, if there are 5 pages, create 5 paginations buttons
-  for (let i = 1; i <= totalPages; i++) {
-
-    // Create button
-    const pageButton = document.createElement('button');
-    
-    // Add text to the button with text representing the iteration index
-    pageButton.textContent = i;
-
-    // Add button class
-    pageButton.className = 'pagination-button';
-
-    // If the iteration index is equal to the page number, add a clicked class to highlist the current button
-    if (i === currentPage) {
-      pageButton.classList.add('clicked');
+  const prevButton = document.createElement('button');
+  prevButton.textContent = '<';
+  prevButton.id = 'prevPage';
+  prevButton.classList.add('pagination-button');
+  prevButton.addEventListener('click', () => {
+    if (currentPage > 1) {
+      currentPage--;
+      renderPage(currentPage);
+      renderUpdate()
+    } else {
+      alert('첫 번째 페이지입니다.');
     }
+  });
 
-    // Append the button to the page container
-    paginationContainer.appendChild(pageButton);
-  }
+  // Create the next button
+  const nextButton = document.createElement('button');
+  nextButton.textContent = '>';
+  nextButton.id = 'nextPage';
+  nextButton.classList.add('pagination-button');
+  nextButton.addEventListener('click', () => {
+    const totalItems = document.querySelectorAll('#remotes > div').length;
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    
+    if (currentPage < totalPages) {
+      currentPage++;
+      renderPage(currentPage);
+      renderUpdate()
+    } else {
+      alert('마지막 페이지입니다.');
+    }
+  });
 
+  // Create the current page display
+  const currentPageDisplay = document.createElement('span');
+  currentPageDisplay.id = 'currentPage';
+
+  // Update current page display
+  const totalItems = document.querySelectorAll('#remotes > div').length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  currentPageDisplay.textContent = '\u00A0' + currentPage+ '\u00A0' + ' / ' + '\u00A0' + totalPages;
+
+  // Append buttons and current page display to the pagination container
+  paginationContainer.appendChild(prevButton);
+  paginationContainer.appendChild(currentPageDisplay);
+  paginationContainer.appendChild(nextButton);
 }
 
 // Function to set the remote video element
 function setRemoteVideoElement(remoteStream, feed, display, talking=null) {
-  // 여기서 최초로 remotepeer가 입장했을 때 currentPage가 1인 곳에 들어오게 되면 _subscribeUpdate(feed)가 바로 실행되고싶다.
+
   // If no feed exists just exit
-
-
   if (!feed) return;
-  
+
   // Check if the remote video element with the given feed ID already exists
   if (!document.getElementById('video_' + feed)) {
-    
 
     console.log('===========inside remoteElement, feed element doesnt exist========')
     // Create a new span element to display the user's name and feed ID
     const nameElem = document.createElement('span');
-    const onlyAudio_btn = "<button onclick='_unsubscribeUpdate("+feed+");' class='btn btn-primary btn-xs' style='margin-left:2px;'>Audio Only</button>";
-    const audioVideo_btn = "<button onclick='_subscribeUpdate("+feed+");' class='btn btn-primary btn-xs' style='margin-left:2px;'>Audio Video</button>";
-    nameElem.innerHTML = display + ' (' + feed + ')' + onlyAudio_btn + audioVideo_btn;
+    // const onlyAudio_btn = "<button onclick='_restartSubscriberAudio("+feed+");' class='btn btn-primary btn-xs' style='margin-left:2px;'>Audio Only</button>";
+    // const onlyAudio_btn = "<button onclick='_unsubscribeUpdate("+feed+");' class='btn btn-primary btn-xs' style='margin-left:2px;'>Audio Only</button>";
+    // const audioVideo_btn = "<button onclick='_restartSubscriberAudioVideo("+feed+");' class='btn btn-primary btn-xs' style='margin-left:2px;'>Audio Video</button>";
+    // const audioVideo_btn = "<button onclick='_subscribeUpdate("+feed+");' class='btn btn-primary btn-xs' style='margin-left:2px;'>Audio Video</button>";
+    // nameElem.innerHTML = display + ' (' + feed + ')' + onlyAudio_btn + audioVideo_btn;
+    nameElem.innerHTML = display + ' (' + feed + ')'
     nameElem.style.display = 'table';
 
     // Create a new video element for displaying the remote stream
@@ -1580,19 +1689,19 @@ function setRemoteVideoElement(remoteStream, feed, display, talking=null) {
     remoteVideoStreamElem.width = 320;
     remoteVideoStreamElem.height = 240;
     remoteVideoStreamElem.autoplay = true;
-    remoteVideoStreamElem.style.cssText = '-moz-transform: scale(-1, 1); -webkit-transform: scale(-1, 1); -o-transform: scale(-1, 1); transform: scale(-1, 1); filter: FlipH;';
     remoteVideoStreamElem.setAttribute('feed', feed);
     remoteVideoStreamElem.id = feed;
-
+    
     // Create an image for no video
     const noImageElem = document.createElement('img')
     noImageElem.src = '/images/blank_person.png'
     noImageElem.width = 320;
     noImageElem.height = 240;
-
     noImageElem.id = `photo_${feed}`
 
-
+    // Aply CSS transformations for mirroring the video horizontally
+    remoteVideoStreamElem.style.cssText = '-moz-transform: scale(-1, 1); -webkit-transform: scale(-1, 1); -o-transform: scale(-1, 1); transform: scale(-1, 1); filter: FlipH;';
+    
     // If the remoteStream is provided, set it as the source for the video element
     if (remoteStream){
       remoteVideoStreamElem.srcObject = remoteStream;
@@ -1611,7 +1720,6 @@ function setRemoteVideoElement(remoteStream, feed, display, talking=null) {
       }
     } else{
       console.log('=========no pic========')
-
       noImageElem.style.display = 'none';
       // remoteVideoStreamElem.style.display = 'none'
     }
@@ -1624,36 +1732,16 @@ function setRemoteVideoElement(remoteStream, feed, display, talking=null) {
     remoteVideoContainer.appendChild(noImageElem);
 
     // Append the container to the 'remotes' element in the HTML
-    document.getElementById('remotes').appendChild(remoteVideoContainer);
+    // document.getElementById('remotes').appendChild(remoteVideoContainer);
+    document.getElementById('remotesMulti').appendChild(remoteVideoContainer);
 
-
-    renderButton(currentPage)
+    // renderButton(currentPage)
     renderPage(currentPage)
   }
 
-    const paginationContainer = document.getElementById('js-pagination');
-    
-    paginationContainer.innerHTML = '';   
-    
-    const totalItems = remoteContainers.length;
-    const totalPages = Math.ceil(totalItems / itemsPerPage);
-
-    for (let i = 1; i <= totalPages; i++) {
-      const pageButton = document.createElement('button');
-      pageButton.textContent = i;
-      pageButton.className = 'pagination-button';
-      
-      if(i === currentPage) {
-        pageButton.classList.add('clicked');
-      } 
-      
-      paginationContainer.appendChild(pageButton);       
-    }
-    
-  }
-  
   // If the video element already exists, update its properties
   else {
+
     console.log('===========inside remoteElement, feed element exist========')
     // Get the video container by its feed
     const remoteVideoContainer = document.getElementById('video_' + feed);
@@ -1665,9 +1753,12 @@ function setRemoteVideoElement(remoteStream, feed, display, talking=null) {
 
     if (display) {
       const nameElem = remoteVideoContainer.getElementsByTagName('span')[0];
-      const onlyAudio_btn = "<button onclick='_unsubscribeUpdate("+feed+");' class='btn btn-primary btn-xs' style='margin-left:2px;'>Audio Only</button>";
-      const audioVideo_btn = "<button onclick='_subscribeUpdate("+feed+");' class='btn btn-primary btn-xs' style='margin-left:2px;'>Audio Video</button>";
-      nameElem.innerHTML = display + ' (' + feed + ')' + onlyAudio_btn + audioVideo_btn;
+       // const onlyAudio_btn = "<button onclick='_restartSubscriberAudio("+feed+");' class='btn btn-primary btn-xs' style='margin-left:2px;'>Audio Only</button>";
+      // const onlyAudio_btn = "<button onclick='_unsubscribeUpdate("+feed+");' class='btn btn-primary btn-xs' style='margin-left:2px;'>Audio Only</button>";
+      // const audioVideo_btn = "<button onclick='_restartSubscriberAudioVideo("+feed+");' class='btn btn-primary btn-xs' style='margin-left:2px;'>Audio Video</button>";
+      // const audioVideo_btn = "<button onclick='_subscribeUpdate("+feed+");' class='btn btn-primary btn-xs' style='margin-left:2px;'>Audio Video</button>";
+      // nameElem.innerHTML = display + ' (' + feed + ')' + onlyAudio_btn + audioVideo_btn;
+      nameElem.innerHTML = display + ' (' + feed + ')'
     }
 
     // If the remoteStream is provided, update the source for the video element
@@ -1677,10 +1768,9 @@ function setRemoteVideoElement(remoteStream, feed, display, talking=null) {
       remoteVideoStreamElem.srcObject = remoteStream;
 
       // const audioTracks = remoteStream.getAudioTracks()
-      const videoTracks = remoteStream.getVideoTracks();
+      const videoTracks = remoteStream.getVideoTracks()
 
       if (videoTracks.length === 0){
-
         console.log('=========no video, only pic========')
         remoteVideoStreamElem.style.display = 'none'
         noImageElem.style.display = 'block';
@@ -1693,29 +1783,24 @@ function setRemoteVideoElement(remoteStream, feed, display, talking=null) {
       console.log('=========no pic========')
       // noImageElem.style.display = 'block';
       // remoteVideoStreamElem.style.display = 'none'
-
     }
 
     if (talking == true){
-      console.log('=====talking is true=======');
-      remoteVideoContainer.classList.add('border', 'border-danger');
-
+      console.log("=====talking is true=======")
+      remoteVideoContainer.classList.add('border-talking');
     } else if (talking == false){
-      console.log('=====talking is false=======');
-      remoteVideoContainer.classList.remove('border', 'border-danger');
+      console.log("=====talking is false=======")
+      remoteVideoContainer.classList.remove('border-talking');
     }
-  }
+}
 }
 
-
 function removeVideoElementByFeed(feed, stopTracks = true) {
-  console.log("=======Stop Video Element by the feed=========")
   const videoContainer = document.getElementById(`video_${feed}`);
   if (videoContainer) removeVideoElement(videoContainer, stopTracks);
 }
 
 function removeVideoElement(container, stopTracks = true) {
-  console.log("=========Remove the video container by the feed========")
   let videoStreamElem = container.getElementsByTagName('video').length > 0 ? container.getElementsByTagName('video')[0] : null;
   if (videoStreamElem && videoStreamElem.srcObject && stopTracks) {
     videoStreamElem.srcObject.getTracks().forEach(track => track.stop());
@@ -1725,7 +1810,6 @@ function removeVideoElement(container, stopTracks = true) {
 }
 
 function removeAllVideoElements() {
-  console.log("=========Removing all the available video element both local and remote=======")
   const locals = document.getElementById('locals');
   const localVideoContainers = locals.getElementsByTagName('div');
   for (let i = 0; localVideoContainers && i < localVideoContainers.length; i++)
@@ -1733,7 +1817,7 @@ function removeAllVideoElements() {
   while (locals.firstChild)
     locals.removeChild(locals.firstChild);
 
-  var remotes = document.getElementById('remotes');
+  var remotes = document.getElementById('remotesMulti');
   const remoteVideoContainers = remotes.getElementsByTagName('div');
   for (let i = 0; remoteVideoContainers && i < remoteVideoContainers.length; i++)
     removeVideoElement(remoteVideoContainers[i]);
@@ -1784,4 +1868,23 @@ function getDateTime() {
   var time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds()+ ":" + today.getMilliseconds();
   var date_time = date + ' ' + time;  
   return date_time;
+}
+
+///////////////////////////////////////////////////////////
+// custom emit messages to send to the Server
+///////////////////////////////////////////////////////////
+function getRoomId(roomName) {
+  console.log("================ getRoomId =============");
+  _listRooms();
+  console.log($('#room_list').find('.room').length);
+  var roomList = $('#room_list').find('.room');
+  console.log('roomList=', roomList);
+  roomList.forEach((room) => {
+    console.log('room=', room);
+    var roomId = room.attr('room');
+    var roomName = room.text();
+    console.log('roomId=',roomId, '    roomName=',roomName);
+
+  });
+  
 }

@@ -27,12 +27,12 @@
             }
         ],
         "quotes": [
-            "warn",
+            "never",
             "single"
         ],
         "semi": [
             "never",
-            // "always"
+            "always"
         ],
         "no-empty": "off",
         "multiline-comment-style": 1
