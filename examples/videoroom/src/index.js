@@ -864,6 +864,7 @@ function initFrontEnd() {
   });
   
   app.get('/multi', function(req, res) {
+    // res.render('multi.html', {});
     res.render('multi.html', {});
   });
 

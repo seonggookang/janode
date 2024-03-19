@@ -29,7 +29,7 @@ var local_display;
 
 
 // Initial the current page and the number of items per page
-const itemsPerPage = window.innerWidth > 600 ? 2 : 1;
+const itemsPerPage = window.innerWidth > 600 ? 2 : 2;
 let currentPage = 1;
 
 let subscribeList = []
@@ -825,7 +825,9 @@ socket.on('disconnect', () => {
   pendingOfferMap.clear();
   removeAllVideoElements();
   closeAllPCs();
-  document.getElementById('js-pagination').innerHTML = '';
+  renderButton(currentPage);
+  renderPage(currentPage);
+  renderUpdate();
 });
 
 socket.on('leaveAll', ({ data }) => {
@@ -1459,41 +1461,8 @@ function renderUpdate(){
   }
 } 
 
-
-
-// Show the items to display on the page (set display to none or block)
-function renderPage(pageNumber) {
-
-  subscribeList = [] // reset the list 
-  unSubscribeList = [] // reset the list
-
-  const startIndex = (pageNumber - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  
+function prevNextButtonMaker(){
   const remoteContainer = document.getElementById('remotes');
-  const remoteContainers = document.querySelectorAll('#remotes > div');
-
-  console.log("====Inside renderPage before add to the list======",subscribeList)
-
-  remoteContainers.forEach((container, index) => {
-      
-    let feed = parseInt(container.querySelector('span').innerText.match(/\((\d+)\)/)[1]);
-
-    if (index >= startIndex && index < endIndex) {
-      if (!subscribeList.includes(feed)){
-        console.log("=====the data pushed is=====", feed)
-        subscribeList.push(feed)
-      }
-      container.style.display = 'block';
-    } 
-    else {
-      if (!unSubscribeList.includes(feed)){
-        unSubscribeList.push(feed)
-      }
-      container.style.display = 'none';
-    }
-  });
-
   const paginationContainer = document.getElementById('js-pagination');
   paginationContainer.innerHTML = '';
 
@@ -1512,7 +1481,6 @@ function renderPage(pageNumber) {
         alert('첫 번째 페이지입니다.');
       }
     });
-    console.log('remoteContainer >>> ', remoteContainer);
     if(remoteContainer !== null) {
       remoteContainer.parentNode.insertBefore(prevButton, remoteContainer);
     }
@@ -1549,20 +1517,69 @@ function renderPage(pageNumber) {
   // Update current page display
   const totalItems = document.querySelectorAll('#remotes > div').length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
-  currentPageDisplay.textContent = '\u00A0' + '('+'\u00A0' + currentPage+ '\u00A0' + ' / ' + '\u00A0' + totalPages + ' )';
+  currentPageDisplay.textContent = '\u00A0'+'\u00A0' + '('+'\u00A0' + currentPage+ '\u00A0' + ' / ' + '\u00A0' + totalPages + ' )';
 
   // Append buttons and current page display to the pagination container
-  // paginationContainer.appendChild(prevButton);
   paginationContainer.appendChild(currentPageDisplay);
-  // paginationContainer.appendChild(nextButton);
+
+  if (totalItems === 0) {
+    const prevPageElement = document.getElementById('prevPage');
+    const remotesElement = document.getElementById('currentPage');
+    const nextPageElement = document.getElementById('nextPage');
+  
+    if (prevPageElement) {
+      prevPageElement.remove();
+    }
+  
+    if (remotesElement) {
+      remotesElement.innerHTML = '';
+    }
+  
+    if (nextPageElement) {
+      nextPageElement.remove();
+    }
+  }
+}
+
+// Show the items to display on the page (set display to none or block)
+function renderPage(pageNumber) {
+
+  subscribeList = [] // reset the list 
+  unSubscribeList = [] // reset the list
+
+  const startIndex = (pageNumber - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  
+  const remoteContainers = document.querySelectorAll('#remotes > div');
+
+  console.log("====Inside renderPage before add to the list======",subscribeList)
+
+  remoteContainers.forEach((container, index) => {
+      
+    let feed = parseInt(container.querySelector('span').innerText.match(/\((\d+)\)/)[1]);
+
+    if (index >= startIndex && index < endIndex) {
+      if (!subscribeList.includes(feed)){
+        console.log("=====the data pushed is=====", feed)
+        subscribeList.push(feed)
+      }
+      container.style.display = 'block';
+    } 
+    else {
+      if (!unSubscribeList.includes(feed)){
+        unSubscribeList.push(feed)
+      }
+      container.style.display = 'none';
+    }
+  });
+
+  prevNextButtonMaker();
 }
 
 // Function to create the pagination buttons
 function renderButton(pageNumber){
-
   // currentPage = pageNumber
-
-  console.log("=====inside the renderButton=======", pageNumber)
+  
   // Get the pagination container element
   const paginationContainer = document.getElementById('js-pagination');
   // Get the remote container element
@@ -1576,44 +1593,13 @@ function renderButton(pageNumber){
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   
   // Clear the existing pagination container to create a set of buttons
-  paginationContainer.innerHTML = '';
-  
-  if (pageNumber > totalPages) {
-    return renderPage(totalPages);
-  }
+  paginationContainer.innerHTML = '';// 이거 때문에 아래꺼에서 null로 찍힘
 
   // Check if the current page becomes empty
-  // if ((pageNumber - 1) * itemsPerPage >= totalItems) {
-  //   // If the current page is empty, move to the previous page
-  //   currentPage = Math.max(1, currentPage - 1);   
-  // }
-  // if(totalPages === 0) {
-  //   document.getElementById('remotesContainer').innerHTML = '';
-  //   document.getElementById('currentPage').innerHTML = '';
-  // }
-
-  // Creating the pagination buttons depends on the totalpages
-  // Example, if there are 5 pages, create 5 paginations buttons
-  // for (let i = 1; i <= totalPages; i++) {
-
-  //   // Create button
-  //   const pageButton = document.createElement('button');
-    
-  //   // Add text to the button with text representing the iteration index
-  //   pageButton.textContent = i;
-
-  //   // Add button class
-  //   pageButton.className = 'pagination-button';
-
-  //   // If the iteration index is equal to the page number, add a clicked class to highlist the current button
-  //   if (i === currentPage) {
-  //     pageButton.classList.add('clicked');
-  //   }
-
-  //   // Append the button to the page container
-  //   paginationContainer.appendChild(pageButton);
-  // }
-
+  if ((pageNumber - 1) * itemsPerPage >= totalItems) {
+    // If the current page is empty, move to the previous page
+    currentPage = Math.max(1, pageNumber - 1);
+  }
 }
 
 // Function to set the remote video element
@@ -1730,7 +1716,7 @@ function setRemoteVideoElement(remoteStream, feed, display, talking=null) {
         remoteVideoStreamElem.style.display = 'block'
         noImageElem.style.display = 'none';
       }
-    }else{
+    } else {
       console.log('=========no pic========')
       // noImageElem.style.display = 'block';
       // remoteVideoStreamElem.style.display = 'none'
@@ -1739,6 +1725,12 @@ function setRemoteVideoElement(remoteStream, feed, display, talking=null) {
     if (talking == true){
       console.log("=====talking is true=======")
       remoteVideoContainer.classList.add('border-talking');
+      // if(현재페이지에 있는 사람이 말하고 있다면){
+
+      // }else {
+        document.getElementById('whoIsTalking').textContent = `${display}`+"가 말하고 있습니다!";
+      // }
+      
     } else if (talking == false){
       console.log("=====talking is false=======")
       remoteVideoContainer.classList.remove('border-talking');

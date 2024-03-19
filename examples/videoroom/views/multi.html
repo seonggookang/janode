@@ -19,6 +19,10 @@
       margin-right: 0px;
     }
 
+    .border-talking {
+      border: 3px solid red
+    }
+
     .localBlankPerson {
       width: 160px;
       height: 120px;
@@ -115,6 +119,7 @@
     /*   밑에는 새로 추가한 css */
     #currentPage {
       font-size: 20px;
+      margin-right: auto;
       margin: 0 5px 0 0;
       justify-content: center;
       align-items: center;
@@ -289,10 +294,13 @@
                   </div>
                   <div style='display: flex; align-items: center;'>
                     <div id='participants'></div>
-                    <div id="js-pagination" style='display: flex; justify-content: center;'></div>
+                    <div id="js-pagination" style='display: flex; '></div>
                   </div>
-                  <div id="remotesMulti"
-                    style="display: flex; justify-content: safe; overflow-x: auto; flex-wrap: wrap;"></div>
+                  <div id="remotesContainer"
+                    style='display: flex; justify-content: flex-start; align-items: center; position: relative;'>
+                    <div id="remotesMulti"
+                      style="display: flex; justify-content: safe; overflow-x: auto; flex-wrap: wrap;"> </div>
+                  </div>
                   <div id="screen" style="text-align: center;"></div>
                 </div>
 
@@ -331,7 +339,8 @@
 
   <script src="/socket.io/socket.io.js"></script>
   <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script> -->
-  <script src="/multi_pagination.js"></script>
+  <!-- <script src="/multi_pagination.js"></script> -->
+  <script src="/videoroom-client-multi_pagination.js"></script>
 
   <script>
 
